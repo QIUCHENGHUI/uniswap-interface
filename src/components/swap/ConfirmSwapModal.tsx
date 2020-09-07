@@ -1,5 +1,6 @@
 import { currencyEquals, Trade } from '@uniswap/sdk'
 import React, { useCallback, useMemo } from 'react'
+import { Field } from '../../state/swap/actions'
 import TransactionConfirmationModal, {
   ConfirmationModalContent,
   TransactionErrorContent
@@ -27,6 +28,7 @@ export default function ConfirmSwapModal({
   originalTrade,
   onAcceptChanges,
   allowedSlippage,
+  formattedAmounts,
   onConfirm,
   onDismiss,
   recipient,
@@ -43,6 +45,7 @@ export default function ConfirmSwapModal({
   recipient: string | null
   allowedSlippage: number
   onAcceptChanges: () => void
+  formattedAmounts: { [field in Field]?: string }
   onConfirm: () => void
   swapErrorMessage: string | undefined
   onDismiss: () => void
@@ -60,6 +63,7 @@ export default function ConfirmSwapModal({
         recipient={recipient}
         showAcceptChanges={showAcceptChanges}
         onAcceptChanges={onAcceptChanges}
+        formattedAmounts={formattedAmounts}
       />
     ) : null
   }, [allowedSlippage, onAcceptChanges, recipient, showAcceptChanges, trade])

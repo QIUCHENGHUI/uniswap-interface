@@ -1,17 +1,20 @@
 import { MaxUint256 } from '@ethersproject/constants'
 import { TransactionResponse } from '@ethersproject/providers'
-import { Trade, TokenAmount, CurrencyAmount, ETHER } from '@uniswap/sdk'
+import { Trade, TokenAmount, CurrencyAmount, ETHER, ChainId } from '@uniswap/sdk'
+// import { MooniswapETHER as ETHER } from "../utils/wrappedCurrency"
 import { useCallback, useMemo } from 'react'
-import { ROUTER_ADDRESS } from '../constants'
+// import { ROUTER_ADDRESS } from '../constants'
 import { useTokenAllowance } from '../data/Allowances'
-import { getTradeVersion, useV1TradeExchangeAddress } from '../data/V1'
+// import { getTradeVersion, useV1TradeExchangeAddress } from '../data/V1'
 import { Field } from '../state/swap/actions'
 import { useTransactionAdder, useHasPendingApproval } from '../state/transactions/hooks'
 import { computeSlippageAdjustedAmounts } from '../utils/prices'
-import { calculateGasMargin } from '../utils'
+import { calculateGasMargin, isUseOneSplitContract } from '../utils'
 import { useTokenContract } from './useContract'
 import { useActiveWeb3React } from './index'
-import { Version } from './useToggledVersion'
+// import { Version } from './useToggledVersion'
+import { BigNumber } from 'ethers'
+import { ONE_SPLIT_ADDRESSES } from '../constants/one-split'
 
 export enum ApprovalState {
   UNKNOWN,
@@ -27,7 +30,7 @@ export function useApproveCallback(
 ): [ApprovalState, () => Promise<void>] {
   const { account } = useActiveWeb3React()
   const token = amountToApprove instanceof TokenAmount ? amountToApprove.token : undefined
-  const currentAllowance = useTokenAllowance(token, account ?? undefined, spender)
+  const currentAllowance = useTokenAllowance(amountToApprove?.currency === ETHER ? undefined : token, account ?? undefined, spender)
   const pendingApproval = useHasPendingApproval(token?.address, spender)
 
   // check the current approval status
@@ -45,7 +48,7 @@ export function useApproveCallback(
       : ApprovalState.APPROVED
   }, [amountToApprove, currentAllowance, pendingApproval, spender])
 
-  const tokenContract = useTokenContract(token?.address)
+  const tokenContract = useTokenContract(amountToApprove?.currency === ETHER ? undefined : token?.address)
   const addTransaction = useTransactionAdder()
 
   const approve = useCallback(async (): Promise<void> => {
@@ -100,12 +103,27 @@ export function useApproveCallback(
 }
 
 // wraps useApproveCallback in the context of a swap
-export function useApproveCallbackFromTrade(trade?: Trade, allowedSlippage = 0) {
+// export function useApproveCallbackFromTrade(trade?: Trade, allowedSlippage = 0) {
+//   const amountToApprove = useMemo(
+//     () => (trade ? computeSlippageAdjustedAmounts(trade, allowedSlippage)[Field.INPUT] : undefined),
+//     [trade, allowedSlippage]
+//   )
+//   const tradeIsV1 = getTradeVersion(trade) === Version.v1
+//   const v1ExchangeAddress = useV1TradeExchangeAddress(trade)
+//   return useApproveCallback(amountToApprove, tradeIsV1 ? v1ExchangeAddress : ROUTER_ADDRESS)
+// }
+
+
+// mooniswap, wraps useApproveCallback in the context of a swap
+export function useApproveCallbackFromTrade(trade?: Trade, distribution?: BigNumber[], allowedSlippage = 0) {
   const amountToApprove = useMemo(
     () => (trade ? computeSlippageAdjustedAmounts(trade, allowedSlippage)[Field.INPUT] : undefined),
     [trade, allowedSlippage]
   )
-  const tradeIsV1 = getTradeVersion(trade) === Version.v1
-  const v1ExchangeAddress = useV1TradeExchangeAddress(trade)
-  return useApproveCallback(amountToApprove, tradeIsV1 ? v1ExchangeAddress : ROUTER_ADDRESS)
+
+  const spenderAddress = isUseOneSplitContract(distribution)
+    ? ONE_SPLIT_ADDRESSES[ChainId.MAINNET]
+    : trade?.route.pairs[0].liquidityToken.address
+
+  return useApproveCallback(amountToApprove, spenderAddress)
 }

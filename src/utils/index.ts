@@ -4,9 +4,15 @@ import { AddressZero } from '@ethersproject/constants'
 import { JsonRpcSigner, Web3Provider } from '@ethersproject/providers'
 import { BigNumber } from '@ethersproject/bignumber'
 import { abi as IUniswapV2Router02ABI } from '@uniswap/v2-periphery/build/IUniswapV2Router02.json'
+import MooniswapABI from '../constants/v1-mooniswap/v1_mooniswap_exchange.json'
+import MooniswapFactoryABI from '../constants/v1-mooniswap/v1_mooniswap_factory.json'
+import { V1_MOONISWAP_FACTORY_ADDRESSES } from '../constants/v1-mooniswap'
+import { ONE_SPLIT_ABI, ONE_SPLIT_ADDRESSES } from '../constants/one-split'
+
 import { ROUTER_ADDRESS } from '../constants'
-import { ChainId, JSBI, Percent, Token, CurrencyAmount, Currency, ETHER } from '@uniswap/sdk'
+import { ChainId, JSBI, Percent, Token, CurrencyAmount, Currency } from '@uniswap/sdk'
 import { TokenAddressMap } from '../state/lists/hooks'
+import { UniswapZeroETHER } from './wrappedCurrency'
 
 // returns the checksummed address if the address is valid, otherwise returns false
 export function isAddress(value: any): string | false {
@@ -84,7 +90,7 @@ export function getProviderOrSigner(library: Web3Provider, account?: string): We
 // account is optional
 export function getContract(address: string, ABI: any, library: Web3Provider, account?: string): Contract {
   if (!isAddress(address) || address === AddressZero) {
-    throw Error(`Invalid 'address' parameter '${address}'.`)
+    // throw Error(`Invalid 'address' parameter '${address}'.`)
   }
 
   return new Contract(address, ABI, getProviderOrSigner(library, account) as any)
@@ -100,6 +106,33 @@ export function escapeRegExp(string: string): string {
 }
 
 export function isTokenOnList(defaultTokens: TokenAddressMap, currency?: Currency): boolean {
-  if (currency === ETHER) return true
+  if (currency === UniswapZeroETHER) return true
+  return Boolean(currency instanceof Token && defaultTokens[currency.chainId]?.[currency.address])
+}
+
+// MooniSwap
+
+export function getOneSplit(chainId: ChainId, library: Web3Provider, account?: string) {
+  return getContract(ONE_SPLIT_ADDRESSES[chainId], ONE_SPLIT_ABI, library, account)
+}
+
+export function getMooniswapContract(_: number, library: Web3Provider, pairAddress: string, account?: string) {
+  return getContract(pairAddress, MooniswapABI, library, account)
+}
+
+export function getMooniswapFactoryContract( chainId: ChainId, library: Web3Provider, account?: string) {
+  return getContract(V1_MOONISWAP_FACTORY_ADDRESSES[chainId], MooniswapFactoryABI, library, account)
+}
+export function isUseOneSplitContract(distribution: BigNumber[] | undefined): boolean {
+  return Boolean(
+    distribution &&
+    (
+      distribution?.filter((x: BigNumber) => x && !x.isZero())?.length > 1 ||
+      distribution[12].isZero()
+    )
+  )
+}
+export function isDefaultToken(defaultTokens: TokenAddressMap, currency?: Token): boolean {
+  if (currency === UniswapZeroETHER) return true
   return Boolean(currency instanceof Token && defaultTokens[currency.chainId]?.[currency.address])
 }

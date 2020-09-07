@@ -4,7 +4,6 @@ import {
   Currency,
   CurrencyAmount,
   currencyEquals,
-  ETHER,
   JSBI,
   Pair,
   Percent,
@@ -13,15 +12,27 @@ import {
   TokenAmount,
   Trade,
   TradeType,
-  WETH
+  WETH,
+  ETHER
 } from '@uniswap/sdk'
 import { useMemo } from 'react'
 import { useActiveWeb3React } from '../hooks'
 import { useAllTokens } from '../hooks/Tokens'
-import { useV1FactoryContract } from '../hooks/useContract'
+import { useOneSplit, useV1FactoryContract } from '../hooks/useContract'
 import { Version } from '../hooks/useToggledVersion'
 import { NEVER_RELOAD, useSingleCallResult, useSingleContractMultipleData } from '../state/multicall/hooks'
 import { useETHBalances, useTokenBalance, useTokenBalances } from '../state/wallet/hooks'
+import { BigNumber } from '@ethersproject/bignumber'
+import { DAI, USDC } from '../constants'
+import {
+  ETH_ADDRESS,
+  FLAG_DISABLE_ALL_SPLIT_SOURCES,
+  FLAG_DISABLE_ALL_WRAP_SOURCES, FLAG_DISABLE_MOONISWAP_ALL,
+  ZERO_ADDRESS
+} from '../constants/one-split'
+import { MockMooniSwapPair, useMooniSwapPair } from './Reserves'
+
+import { wrappedUniswapZeroCurrency } from '../utils/wrappedCurrency'
 
 export function useV1ExchangeAddress(tokenAddress?: string): string | undefined {
   const contract = useV1FactoryContract()
@@ -44,6 +55,7 @@ function useMockV1Pair(inputCurrency?: Currency): MockV1Pair | undefined {
   const tokenBalance = useTokenBalance(v1PairAddress, token)
   const ETHBalance = useETHBalances([v1PairAddress])[v1PairAddress ?? '']
 
+  // const poolAddress = useMooniSwapPool(DAI, USDT)
   return useMemo(
     () =>
       token && tokenBalance && ETHBalance && inputCurrency ? new MockV1Pair(ETHBalance.raw, tokenBalance) : undefined,
@@ -107,7 +119,6 @@ export function useV1Trade(
   // get the mock v1 pairs
   const inputPair = useMockV1Pair(inputCurrency)
   const outputPair = useMockV1Pair(outputCurrency)
-
   const inputIsETH = inputCurrency === ETHER
   const outputIsETH = outputCurrency === ETHER
 
@@ -184,4 +195,75 @@ export function isTradeBetter(
   } else {
     return tradeA.executionPrice.raw.multiply(minimumDelta.add(ONE_HUNDRED_PERCENT)).lessThan(tradeB.executionPrice)
   }
+}
+
+export function useMooniswapTrade(
+  inputCurrency?: Token,
+  outputCurrency?: Token,
+  parseAmount?: TokenAmount
+): [Trade, BigNumber[]] | [undefined, undefined] | undefined {
+  const { chainId } = useActiveWeb3React()
+
+  let mooniswapTrade: Trade | undefined
+
+  const amount = inputCurrency?.decimals && inputCurrency?.decimals !== 0
+    ? parseAmount?.multiply(JSBI.exponentiate(JSBI.BigInt(10), JSBI.BigInt(inputCurrency?.decimals))).toFixed(0)
+    : parseAmount?.toFixed(0)
+
+  const params = [
+    inputCurrency?.address ? inputCurrency.address !== ZERO_ADDRESS ? inputCurrency.address : ETH_ADDRESS : ETH_ADDRESS,
+    outputCurrency?.address ? outputCurrency.address !== ZERO_ADDRESS ? outputCurrency.address : ETH_ADDRESS : ETH_ADDRESS,
+    amount,
+    1,
+    JSBI.add(FLAG_DISABLE_ALL_WRAP_SOURCES, JSBI.add(FLAG_DISABLE_ALL_SPLIT_SOURCES, FLAG_DISABLE_MOONISWAP_ALL)).toString()
+  ]
+
+  const poolPair = useMooniSwapPair(inputCurrency, outputCurrency)
+  const poolPairOverEth = useMooniSwapPair(inputCurrency, wrappedUniswapZeroCurrency(ETHER, chainId))
+  const poolPairOverDai = useMooniSwapPair(inputCurrency, DAI)
+  const poolPairOverUsdc = useMooniSwapPair(inputCurrency, USDC)
+  const poolPairUsdcToDest = useMooniSwapPair(USDC, outputCurrency)
+  const poolPairDaiToDest = useMooniSwapPair(DAI, outputCurrency)
+  const poolPairEthToDest = useMooniSwapPair(wrappedUniswapZeroCurrency(ETHER, chainId), outputCurrency)
+
+  const results = useSingleCallResult(useOneSplit(), 'getExpectedReturn', params)
+  if(!inputCurrency || !outputCurrency || !parseAmount || !results.result) {
+    return
+  }
+
+  const distribution = results.result.distribution
+
+  const pairs: MockMooniSwapPair[] = []
+  if (!distribution[31].isZero() && poolPairOverEth[1] && poolPairEthToDest[1]) {
+    pairs.push(poolPairOverEth[1])
+    pairs.push(poolPairEthToDest[1])
+  }
+  if (!distribution[32].isZero() && poolPairOverDai[1] && poolPairDaiToDest[1]) {
+    pairs.push(poolPairOverDai[1])
+    pairs.push(poolPairDaiToDest[1])
+  }
+  if (!distribution[33].isZero() && poolPairOverUsdc[1] && poolPairUsdcToDest[1]) {
+    pairs.push(poolPairOverUsdc[1])
+    pairs.push(poolPairUsdcToDest[1])
+  }
+  if (!distribution[12].isZero() && poolPair[1]) {
+    pairs.push(poolPair[1])
+  }
+
+  if (pairs.length === 0) {
+    return
+  }
+
+  const exactAmount = new TokenAmount(outputCurrency, JSBI.BigInt(results.result.returnAmount))
+
+  const route = inputCurrency && pairs && pairs.length > 0 && new Route(pairs, inputCurrency, outputCurrency)
+  try {
+    mooniswapTrade =
+      route && exactAmount
+        ? new Trade(route, exactAmount, TradeType.EXACT_OUTPUT)
+        : undefined
+  } catch (error) {
+    console.error('Failed to create mooniswapTrade trade', error)
+  }
+  return [mooniswapTrade, results.result.distribution]
 }

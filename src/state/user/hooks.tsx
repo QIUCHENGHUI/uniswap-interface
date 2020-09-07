@@ -165,8 +165,14 @@ export function usePairAdder(): (pair: Pair) => void {
  * @param tokenA one of the two tokens
  * @param tokenB the other token
  */
+// export function toV2LiquidityToken([tokenA, tokenB]: [Token, Token]): Token {
+//   return new Token(tokenA.chainId, Pair.getAddress(tokenA, tokenB), 18, 'UNI-V2', 'Uniswap V2')
+// }
+
 export function toV2LiquidityToken([tokenA, tokenB]: [Token, Token]): Token {
-  return new Token(tokenA.chainId, Pair.getAddress(tokenA, tokenB), 18, 'UNI-V2', 'Uniswap V2')
+  const symbol = 'MOON-V1' + tokenA.symbol + tokenB.symbol
+  const name = `Mooniswap V1 (${tokenA.symbol}-${tokenB.symbol})`
+  return new Token(tokenA.chainId, Pair.getAddress(tokenA, tokenB), 18, symbol, name)
 }
 
 /**
@@ -175,6 +181,7 @@ export function toV2LiquidityToken([tokenA, tokenB]: [Token, Token]): Token {
 export function useTrackedTokenPairs(): [Token, Token][] {
   const { chainId } = useActiveWeb3React()
   const tokens = useAllTokens()
+  console.log(tokens, 'tokens hooks')
 
   // pinned pairs
   const pinnedPairs = useMemo(() => (chainId ? PINNED_PAIRS[chainId] ?? [] : []), [chainId])

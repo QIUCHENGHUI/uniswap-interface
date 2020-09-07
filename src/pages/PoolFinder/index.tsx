@@ -10,12 +10,14 @@ import { FindPoolTabs } from '../../components/NavigationTabs'
 import { MinimalPositionCard } from '../../components/PositionCard'
 import Row from '../../components/Row'
 import CurrencySearchModal from '../../components/SearchModal/CurrencySearchModal'
-import { PairState, usePair } from '../../data/Reserves'
+import { PairState, useMooniSwapPair } from '../../data/Reserves'
+// usePair
 import { useActiveWeb3React } from '../../hooks'
 import { usePairAdder } from '../../state/user/hooks'
 import { useTokenBalance } from '../../state/wallet/hooks'
 import { StyledInternalLink } from '../../theme'
 import { currencyId } from '../../utils/currencyId'
+import { wrappedUniswapZeroCurrency } from '../../utils/wrappedCurrency'
 import AppBody from '../AppBody'
 import { Dots } from '../Pool/styleds'
 
@@ -25,7 +27,7 @@ enum Fields {
 }
 
 export default function PoolFinder() {
-  const { account } = useActiveWeb3React()
+  const { account, chainId } = useActiveWeb3React()
 
   const [showSearch, setShowSearch] = useState<boolean>(false)
   const [activeField, setActiveField] = useState<number>(Fields.TOKEN1)
@@ -33,7 +35,7 @@ export default function PoolFinder() {
   const [currency0, setCurrency0] = useState<Currency | null>(ETHER)
   const [currency1, setCurrency1] = useState<Currency | null>(null)
 
-  const [pairState, pair] = usePair(currency0 ?? undefined, currency1 ?? undefined)
+  const [pairState, pair] = useMooniSwapPair(wrappedUniswapZeroCurrency(currency0 ?? undefined, chainId) ?? undefined, wrappedUniswapZeroCurrency(currency1 ?? undefined, chainId) ?? undefined)
   const addPair = usePairAdder()
   useEffect(() => {
     if (pair) {
@@ -50,9 +52,11 @@ export default function PoolFinder() {
         JSBI.equal(pair.reserve1.raw, JSBI.BigInt(0))
     )
 
+  console.log(pair?.liquidityToken, 'pair?.liquidityToken')
   const position: TokenAmount | undefined = useTokenBalance(account ?? undefined, pair?.liquidityToken)
   const hasPosition = Boolean(position && JSBI.greaterThan(position.raw, JSBI.BigInt(0)))
 
+  console.log(hasPosition, pair, 'hasPosition, pair')
   const handleCurrencySelect = useCallback(
     (currency: Currency) => {
       if (activeField === Fields.TOKEN0) {
@@ -133,6 +137,7 @@ export default function PoolFinder() {
             </Text>
           </ColumnCenter>
         )}
+
 
         {currency0 && currency1 ? (
           pairState === PairState.EXISTS ? (

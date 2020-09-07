@@ -38,6 +38,7 @@ export default function SwapModalFooter({
     trade
   ])
   const { priceImpactWithoutFee, realizedLPFee } = useMemo(() => computeTradePriceBreakdown(trade), [trade])
+  console.log(realizedLPFee?.toSignificant(), 'realizedLPFee')
   const severity = warningSeverity(priceImpactWithoutFee)
 
   return (
