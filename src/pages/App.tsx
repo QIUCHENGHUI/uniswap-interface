@@ -10,6 +10,7 @@ import { RedirectPathToHome } from './Swap/redirects'
 import Farms from './Farms'
 import FarmsProvider from '../contexts/Farms'
 import UniswapRoute from './Uniswap'
+import YamRoute from './Yam'
 
 const AppWrapper = styled.div`
   display: flex;
@@ -68,7 +69,12 @@ export default function App() {
                     <Farms />
                   </FarmsProvider>
                 </Route>
-                <UniswapRoute />
+                <Route strict path="/yam">
+                  <YamRoute />
+                </Route>
+                <Route strict path="/uniswap">
+                  <UniswapRoute />
+                </Route>
                 <Route component={RedirectPathToHome} />
               </Switch>
             </Web3ReactManager>

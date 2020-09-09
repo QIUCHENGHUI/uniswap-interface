@@ -1,5 +1,5 @@
 import React from 'react'
-import { Route } from 'react-router-dom'
+import { Switch, Route } from 'react-router-dom'
 import Swap from '../Swap'
 import { RedirectPathToSwapOnly, RedirectToSwap } from '../Swap/redirects'
 import Pool from '../Pool'
@@ -18,7 +18,7 @@ import MigrateV1Exchange from '../MigrateV1/MigrateV1Exchange'
 
 export default function UniswapRoute() {
   return (
-    <>
+    <Switch>
       <Route exact strict path="/uniswap/swap" component={Swap} />
       <Route exact strict path="/uniswap/swap/:outputCurrency" component={RedirectToSwap} />
       <Route exact strict path="/uniswap/send" component={RedirectPathToSwapOnly} />
@@ -33,6 +33,6 @@ export default function UniswapRoute() {
       <Route exact strict path="/uniswap/uniswap/remove/:currencyIdA/:currencyIdB" component={RemoveLiquidity} />
       <Route exact strict path="/uniswap/migrate/v1" component={MigrateV1} />
       <Route exact strict path="/uniswap/migrate/v1/:address" component={MigrateV1Exchange} />
-    </>
+    </Switch>
   )
 }
