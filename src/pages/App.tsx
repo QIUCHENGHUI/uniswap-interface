@@ -7,8 +7,8 @@ import Popups from '../components/Popups'
 import Web3ReactManager from '../components/Web3ReactManager'
 import DarkModeQueryParamReader from '../theme/DarkModeQueryParamReader'
 import { RedirectPathToHome } from './Swap/redirects'
-import Farms from './Farms'
-import FarmsProvider from '../contexts/Farms'
+import Farms from './Home'
+import HomeProvider from '../contexts/home'
 import UniswapRoute from './Uniswap'
 import YamRoute from './Yam'
 
@@ -65,9 +65,9 @@ export default function App() {
             <Web3ReactManager>
               <Switch>
                 <Route exact strict path={HOME_PATH}>
-                  <FarmsProvider>
+                  <HomeProvider>
                     <Farms />
-                  </FarmsProvider>
+                  </HomeProvider>
                 </Route>
                 <Route strict path="/yam">
                   <YamRoute />

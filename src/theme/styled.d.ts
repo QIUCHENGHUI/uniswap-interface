@@ -97,7 +97,9 @@ declare module 'styled-components' {
     flexRowNoWrap: FlattenSimpleInterpolation
 
     // farms
+    borderRadius: number
     siteWidth: number
+    breakpointsMobile: number
     spacing: Spacing
     topBarSize: number
   }

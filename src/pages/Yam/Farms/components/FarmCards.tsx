@@ -1,16 +1,23 @@
 /* eslint-disable react/prop-types */
-import React from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import styled from 'styled-components'
+import { useWallet } from 'use-wallet'
+import Countdown, { CountdownRenderProps } from 'react-countdown'
+import numeral from 'numeral'
 
-import Button from '../../../Farms/components/Button'
-import Card from '../../../Farms/components/Card'
+import Button from '../../../Home/components/Button'
+import Card from '../../../Home/components/Card'
 import CardIcon from '../../../../components/CardIcon'
 import IconLoader from '../../../../components/IconLoader'
 import Spacer from '../../../../components/Spacer'
 
-import useFarms from '../../../../hooks/useFarms'
+import useFarms from '../../../../hooks/yam/useFarms'
+import useYam from '../../../../hooks/yam/useYam'
 
-import { Farm } from '../../../../contexts/Farms'
+import { Farm } from '../../../../contexts/yam/Farms'
+
+import { bnToDec } from '../../../../utils/yam'
+import { getEarned, getPoolStartTime } from '../../../../utils/yam/yamUtils'
 
 const FarmCards: React.FC = () => {
   const [farms] = useFarms()
@@ -42,7 +49,7 @@ const FarmCards: React.FC = () => {
         ))
       ) : (
         <StyledLoadingWrapper>
-          <IconLoader />
+          <IconLoader text="Loading farms" />
         </StyledLoadingWrapper>
       )}
     </StyledCards>
@@ -54,20 +61,66 @@ interface FarmCardProps {
 }
 
 const FarmCard: React.FC<FarmCardProps> = ({ farm }) => {
+  const [startTime, setStartTime] = useState(0)
+  const [harvestable, setHarvestable] = useState(0)
+
+  const { contract } = farm
+  const { account } = useWallet()
+  const yam = useYam()
+
+  const getStartTime = useCallback(async () => {
+    const startTime = await getPoolStartTime(farm.contract)
+    setStartTime(startTime)
+  }, [farm, setStartTime])
+
+  const renderer = (countdownProps: CountdownRenderProps) => {
+    const { hours, minutes, seconds } = countdownProps
+    const paddedSeconds = seconds < 10 ? `0${seconds}` : seconds
+    const paddedMinutes = minutes < 10 ? `0${minutes}` : minutes
+    const paddedHours = hours < 10 ? `0${hours}` : hours
+    return (
+      <span style={{ width: '100%' }}>
+        {paddedHours}:{paddedMinutes}:{paddedSeconds}
+      </span>
+    )
+  }
+
+  useEffect(() => {
+    if (farm && farm.id === 'ycrv_yam_uni_lp') {
+      getStartTime()
+    }
+  }, [farm, getStartTime])
+
+  useEffect(() => {
+    async function fetchEarned() {
+      const earned = await getEarned(yam, contract, account)
+      setHarvestable(bnToDec(earned))
+    }
+    if (yam && account) {
+      fetchEarned()
+    }
+  }, [yam, contract, account, setHarvestable])
+
+  const poolActive = startTime * 1000 - Date.now() <= 0
   return (
     <StyledCardWrapper>
-      {!!farm.highlight && <StyledCardAccent />}
+      {farm.id === 'ycrv_yam_uni_lp' && <StyledCardAccent />}
       <Card>
         <CardContent>
           <StyledContent>
             <CardIcon>{farm.icon}</CardIcon>
             <StyledTitle>{farm.name}</StyledTitle>
             <StyledDetails>
-              <StyledDetail>Deposit BTC</StyledDetail>
-              <StyledDetail>Earn YAM</StyledDetail>
+              <StyledDetail>Deposit {farm.depositToken.toUpperCase()}</StyledDetail>
+              <StyledDetail>Earn {farm.earnToken.toUpperCase()}</StyledDetail>
             </StyledDetails>
             <Spacer />
-            <Button to={`/${farm.id}${farm.home}`} text={'Select'}></Button>
+            <StyledHarvestable>
+              {harvestable ? `${numeral(harvestable).format('0.00a')} YAMs ready to harvest.` : undefined}
+            </StyledHarvestable>
+            <Button disabled={!poolActive} text={poolActive ? 'Select' : undefined} to={`/farms/${farm.id}`}>
+              {!poolActive && <Countdown date={new Date(startTime * 1000)} renderer={renderer} />}
+            </Button>
           </StyledContent>
         </CardContent>
       </Card>
@@ -180,6 +233,13 @@ const StyledDetails = styled.div`
 
 const StyledDetail = styled.div`
   color: ${({ theme }) => theme.grey500};
+`
+
+const StyledHarvestable = styled.div`
+  color: ${({ theme }) => theme.secondaryMain};
+  font-size: 16px;
+  height: 48px;
+  text-align: center;
 `
 
 export default FarmCards

@@ -129,7 +129,9 @@ export function theme(darkMode: boolean): DefaultTheme {
     `,
 
     // farms
+    borderRadius: 12,
     siteWidth: 1200,
+    breakpointsMobile: 400,
     spacing: {
       1: 4,
       2: 8,
