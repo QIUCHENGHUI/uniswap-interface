@@ -2,8 +2,8 @@ import React from 'react'
 import { Route, Switch, useRouteMatch } from 'react-router-dom'
 import farmer from '../../assets/img/farmer.png'
 
-import Page from './components/Page'
-import PageHeader from './components/PageHeader'
+import Page from '../../components/Page'
+import PageHeader from '../../components/PageHeader'
 
 import FarmCards from './components/FarmCards'
 

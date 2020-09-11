@@ -2,8 +2,8 @@ import React from 'react'
 // import { useRouteMatch } from 'react-router-dom'
 import farmer from '../../../assets/img/farmer.png'
 
-import Page from '../../Farms/components/Page'
-import PageHeader from '../../Farms/components/PageHeader'
+import Page from '../../../components/Page'
+import PageHeader from '../../../components/PageHeader'
 
 import FarmCards from './components/FarmCards'
 

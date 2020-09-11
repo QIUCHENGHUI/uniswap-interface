@@ -4,9 +4,9 @@ import styled from 'styled-components'
 
 import Button from '../../../Farms/components/Button'
 import Card from '../../../Farms/components/Card'
-import CardIcon from '../../../Farms/components/CardIcon'
-import Loader from '../../../Farms/components/Loader'
-import Spacer from '../../../Farms/components/Spacer'
+import CardIcon from '../../../../components/CardIcon'
+import IconLoader from '../../../../components/IconLoader'
+import Spacer from '../../../../components/Spacer'
 
 import useFarms from '../../../../hooks/useFarms'
 
@@ -42,7 +42,7 @@ const FarmCards: React.FC = () => {
         ))
       ) : (
         <StyledLoadingWrapper>
-          <Loader text="Loading farms" />
+          <IconLoader />
         </StyledLoadingWrapper>
       )}
     </StyledCards>

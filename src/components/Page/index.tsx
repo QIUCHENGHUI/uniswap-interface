@@ -1,9 +1,6 @@
 import React from 'react'
 import styled from 'styled-components'
 
-// import Footer from '../Footer'
-// import TopBar from '../TopBar'
-
 // eslint-disable-next-line react/prop-types
 const Page: React.FC = ({ children }) => (
   <StyledPage>
