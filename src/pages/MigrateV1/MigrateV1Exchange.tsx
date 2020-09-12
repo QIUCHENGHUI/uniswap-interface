@@ -373,7 +373,7 @@ export default function MigrateV1Exchange({
 
             <ButtonConfirmed
               onClick={() => {
-                history.push(`/remove/v1/${validatedAddress}`)
+                history.push(`/uniswap/remove/v1/${validatedAddress}`)
               }}
             >
               Remove

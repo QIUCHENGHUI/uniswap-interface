@@ -47,7 +47,7 @@ function V1PositionCard({ token, V1LiquidityBalance }: PositionCardProps) {
 
         <AutoColumn gap="8px">
           <RowBetween marginTop="10px">
-            <ButtonSecondary width="68%" as={Link} to={`/migrate/v1/${V1LiquidityBalance.token.address}`}>
+            <ButtonSecondary width="68%" as={Link} to={`/uniswap/migrate/v1/${V1LiquidityBalance.token.address}`}>
               Migrate
             </ButtonSecondary>
 
@@ -55,7 +55,7 @@ function V1PositionCard({ token, V1LiquidityBalance }: PositionCardProps) {
               style={{ backgroundColor: 'transparent' }}
               width="28%"
               as={Link}
-              to={`/remove/v1/${V1LiquidityBalance.token.address}`}
+              to={`/uniswap/remove/v1/${V1LiquidityBalance.token.address}`}
             >
               Remove
             </ButtonSecondary>
