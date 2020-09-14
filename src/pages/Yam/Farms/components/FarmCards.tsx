@@ -118,7 +118,7 @@ const FarmCard: React.FC<FarmCardProps> = ({ farm }) => {
             <StyledHarvestable>
               {harvestable ? `${numeral(harvestable).format('0.00a')} YAMs ready to harvest.` : undefined}
             </StyledHarvestable>
-            <Button disabled={!poolActive} text={poolActive ? 'Select' : undefined} to={`/farms/${farm.id}`}>
+            <Button disabled={!poolActive} text={poolActive ? 'Select' : undefined} to={`/yam/farms/${farm.id}`}>
               {!poolActive && <Countdown date={new Date(startTime * 1000)} renderer={renderer} />}
             </Button>
           </StyledContent>

@@ -3,6 +3,7 @@ import { Switch, Route } from 'react-router-dom'
 import Farms from './Farms'
 import Home from './Home'
 import YamProvider from '../../contexts/yam/YamProvider'
+import TransactionProvider from '../../contexts/yam/Transactions'
 import FarmsProvider from '../../contexts/yam/Farms'
 import ModalsProvider from '../../contexts/yam/Modals'
 import { UseWalletProvider } from 'use-wallet'
@@ -16,14 +17,16 @@ export default function YamRoute() {
       }}
     >
       <YamProvider>
-        <FarmsProvider>
-          <ModalsProvider>
-            <Switch>
-              <Route exact strict path="/yam/home" component={Home} />
-              <Route exact strict path="/yam/farms" component={Farms} />
-            </Switch>
-          </ModalsProvider>
-        </FarmsProvider>
+        <TransactionProvider>
+          <FarmsProvider>
+            <ModalsProvider>
+              <Switch>
+                <Route path="/yam/home" component={Home} />
+                <Route path="/yam/farms" component={Farms} />
+              </Switch>
+            </ModalsProvider>
+          </FarmsProvider>
+        </TransactionProvider>
       </YamProvider>
     </UseWalletProvider>
   )

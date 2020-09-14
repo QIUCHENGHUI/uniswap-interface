@@ -69,10 +69,10 @@ export default function App() {
                     <Farms />
                   </HomeProvider>
                 </Route>
-                <Route strict path="/yam">
+                <Route path="/yam">
                   <YamRoute />
                 </Route>
-                <Route strict path="/uniswap">
+                <Route path="/uniswap">
                   <UniswapRoute />
                 </Route>
                 <Route component={RedirectPathToHome} />
