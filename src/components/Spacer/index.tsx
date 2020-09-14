@@ -30,8 +30,8 @@ interface StyledSpacerProps {
 }
 
 const StyledSpacer = styled.div<StyledSpacerProps>`
-  height: ${props => props.size}px;
-  width: ${props => props.size}px;
+  height: ${({ size }) => size}px;
+  width: ${({ size }) => size}px;
 `
 
 export default Spacer

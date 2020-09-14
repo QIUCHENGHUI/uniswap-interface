@@ -31,7 +31,7 @@ interface StyledContainerProps {
 const StyledContainer = styled.div<StyledContainerProps>`
   box-sizing: border-box;
   margin: 0 auto;
-  max-width: ${props => props.width}px;
+  max-width: ${({ width }) => width}px;
   padding: 0 ${({ theme }) => theme.spacing[4]}px;
   width: 100%;
 `

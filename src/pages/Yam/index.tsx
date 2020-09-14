@@ -1,6 +1,7 @@
 import React from 'react'
 import { Switch, Route } from 'react-router-dom'
 import Farms from './Farms'
+import Home from './Home'
 import YamProvider from '../../contexts/yam/YamProvider'
 import FarmsProvider from '../../contexts/yam/Farms'
 import ModalsProvider from '../../contexts/yam/Modals'
@@ -18,6 +19,7 @@ export default function YamRoute() {
         <FarmsProvider>
           <ModalsProvider>
             <Switch>
+              <Route exact strict path="/yam/home" component={Home} />
               <Route exact strict path="/yam/farms" component={Farms} />
             </Switch>
           </ModalsProvider>

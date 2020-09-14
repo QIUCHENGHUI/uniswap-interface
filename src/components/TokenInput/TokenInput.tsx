@@ -44,7 +44,7 @@ const TokenInput: React.FC<TokenInputProps> = ({ max, symbol, onChange, onSelect
 const StyledTokenInput = styled.div``
 
 const StyledSpacer = styled.div`
-  width: ${props => props.theme.spacing[3]}px;
+  width: ${({ theme }) => theme.spacing[3]}px;
 `
 
 const StyledTokenAdornmentWrapper = styled.div`

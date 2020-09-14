@@ -100,18 +100,18 @@ const StyledButton = styled.button<StyledButtonProps>`
   background-color: ${({ theme }) => theme.grey200};
   border: 0;
   border-radius: 12px;
-  box-shadow: ${props => props.boxShadow};
-  color: ${props => (!props.disabled ? props.color : `${props.color}55`)};
+  box-shadow: ${({ boxShadow }) => boxShadow};
+  color: ${({ disabled, color }) => (!disabled ? color : `${color}55`)};
   cursor: pointer;
   display: flex;
-  font-size: ${props => props.fontSize}px;
+  font-size: ${({ fontSize }) => fontSize}px;
   font-weight: 700;
-  height: ${props => props.size}px;
+  height: ${({ size }) => size}px;
   justify-content: center;
   outline: none;
-  padding-left: ${props => props.padding}px;
-  padding-right: ${props => props.padding}px;
-  pointer-events: ${props => (!props.disabled ? undefined : 'none')};
+  padding-left: ${({ padding }) => padding}px;
+  padding-right: ${({ padding }) => padding}px;
+  pointer-events: ${({ disabled }) => (!disabled ? undefined : 'none')};
   width: 100%;
   &:hover {
     background-color: ${({ theme }) => theme.grey100};
@@ -125,8 +125,8 @@ const StyledLink = styled(Link)`
   flex: 1;
   height: 56px;
   justify-content: center;
-  margin: 0 ${props => -props.theme.spacing[4]}px;
-  padding: 0 ${props => props.theme.spacing[4]}px;
+  margin: 0 ${({ theme }) => -theme.spacing[4]}px;
+  padding: 0 ${({ theme }) => theme.spacing[4]}px;
   text-decoration: none;
 `
 
