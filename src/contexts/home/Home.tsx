@@ -14,7 +14,7 @@ const ICON_FOR_DEX: { [key: string]: string } = {
 }
 
 const HOME_FOR_DEX: { [key: string]: string } = {
-  YAM_DEX: '/home',
+  YAM_DEX: '/farms',
   UNISWAP_DEX: '/swap'
 }
 
