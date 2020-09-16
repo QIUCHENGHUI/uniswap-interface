@@ -82,7 +82,7 @@ const StyledCardContent = styled.div`
   display: flex;
   flex: 1;
   flex-direction: column;
-  padding: ${props => props.theme.spacing[4]}px;
+  padding: ${({ theme }) => theme.spacing[4]}px;
 `
 
 const StyledCardAccent = styled.div`
@@ -139,7 +139,7 @@ const StyledLoadingWrapper = styled.div`
 
 const StyledRow = styled.div`
   display: flex;
-  margin-bottom: ${props => props.theme.spacing[4]}px;
+  margin-bottom: ${({ theme }) => theme.spacing[4]}px;
   flex-flow: row wrap;
   @media (max-width: 768px) {
     width: 100%;
@@ -150,7 +150,7 @@ const StyledRow = styled.div`
 
 const StyledCardWrapper = styled.div`
   display: flex;
-  width: calc((900px - ${props => props.theme.spacing[4]}px * 2) / 3);
+  width: calc((900px - ${({ theme }) => theme.spacing[4]}px * 2) / 3);
   position: relative;
 `
 

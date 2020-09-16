@@ -125,8 +125,8 @@ const StyledLink = styled(Link)`
   flex: 1;
   height: 56px;
   justify-content: center;
-  margin: 0 ${props => -props.theme.spacing[4]}px;
-  padding: 0 ${props => props.theme.spacing[4]}px;
+  margin: 0 ${({ theme }) => -theme.spacing[4]}px;
+  padding: 0 ${({ theme }) => theme.spacing[4]}px;
   text-decoration: none;
 `
 
