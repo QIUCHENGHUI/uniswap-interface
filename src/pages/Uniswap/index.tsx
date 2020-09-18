@@ -30,7 +30,7 @@ export default function UniswapRoute() {
       <Route exact path="/uniswap/add/:currencyIdA/:currencyIdB" component={RedirectDuplicateTokenIds} />
       <Route exact strict path="/uniswap/remove/v1/:address" component={RemoveV1Exchange} />
       <Route exact strict path="/uniswap/remove/:tokens" component={RedirectOldRemoveLiquidityPathStructure} />
-      <Route exact strict path="/uniswap/uniswap/remove/:currencyIdA/:currencyIdB" component={RemoveLiquidity} />
+      <Route exact strict path="/uniswap/remove/:currencyIdA/:currencyIdB" component={RemoveLiquidity} />
       <Route exact strict path="/uniswap/migrate/v1" component={MigrateV1} />
       <Route exact strict path="/uniswap/migrate/v1/:address" component={MigrateV1Exchange} />
     </Switch>
