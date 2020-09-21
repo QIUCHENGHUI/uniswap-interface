@@ -4,7 +4,7 @@ import React, { useCallback, useState, useMemo } from 'react'
 import Button from '../YamButton'
 import CardIcon from '../CardIcon'
 import Modal, { ModalProps } from '../YamModal'
-import ModalActions from '..//ModalActions'
+import ModalActions from '../ModalActions'
 import ModalContent from '../ModalContent'
 import ModalTitle from '../ModalTitle'
 
