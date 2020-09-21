@@ -6,6 +6,7 @@ import farmer from '../../../assets/img/farmer.png'
 
 import Page from '../../../components/Page'
 import PageHeader from '../../../components/PageHeader'
+import { useActiveWeb3React } from '../../../hooks'
 
 import Farm from '../Farm'
 
@@ -14,9 +15,12 @@ import FarmCards from './components/FarmCards'
 export default function Farms() {
   const { path } = useRouteMatch()
   const { connect } = useWallet()
+  const { account } = useActiveWeb3React()
+
   useEffect(() => {
     connect('injected')
-  }, [connect])
+    console.log(account)
+  }, [account, connect])
 
   return (
     <Switch>

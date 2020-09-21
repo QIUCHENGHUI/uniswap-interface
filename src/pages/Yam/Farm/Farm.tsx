@@ -15,9 +15,14 @@ import { getContract } from '../../../utils/yam/erc20'
 
 import Harvest from './components/Harvest'
 import Stake from './components/Stake'
+import { useActiveWeb3React } from '../../../hooks'
+import { useWalletModalToggle } from '../../../state/application/hooks'
 
 const Farm: React.FC = () => {
   const { farmId } = useParams()
+  const { account } = useActiveWeb3React()
+  const toggleWalletModal = useWalletModalToggle()
+
   const { contract, depositToken, depositTokenAddress, earnToken, name, icon } = useFarm(farmId) || {
     depositToken: '',
     depositTokenAddress: '',
@@ -25,12 +30,11 @@ const Farm: React.FC = () => {
     name: '',
     icon: ''
   }
+  const { ethereum } = useWallet()
 
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [])
-
-  const { ethereum } = useWallet()
 
   const tokenContract = useMemo(() => {
     return getContract(ethereum as provider, depositTokenAddress)
@@ -61,7 +65,11 @@ const Farm: React.FC = () => {
         </StyledCardsWrapper>
         <Spacer size="lg" />
         <div>
-          <Button onClick={onRedeem} text="Harvest & Unstake" />
+          {!!account ? (
+            <Button onClick={onRedeem} text="Harvest & Unstake" />
+          ) : (
+            <Button onClick={toggleWalletModal} text="Connect Wallet" />
+          )}
         </div>
         <Spacer size="lg" />
       </StyledFarm>
