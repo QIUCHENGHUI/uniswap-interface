@@ -20,7 +20,8 @@ export default function Farms() {
   useEffect(() => {
     connect('injected')
     console.log(account)
-  }, [account, connect])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account])
 
   return (
     <Switch>

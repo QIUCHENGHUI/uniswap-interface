@@ -1,13 +1,12 @@
 import { useCallback } from 'react'
 
-import { useWallet } from 'use-wallet'
-import { provider } from 'web3-core'
 import { Contract } from 'web3-eth-contract'
+import { useActiveWeb3React } from '..'
 
 import { approve } from '../../utils/yam/yamUtils'
 
 const useApprove = (tokenContract: Contract, poolContract: Contract | undefined) => {
-  const { account }: { account: string | null; ethereum: provider } = useWallet()
+  const { account } = useActiveWeb3React()
 
   const handleApprove = useCallback(async () => {
     try {
