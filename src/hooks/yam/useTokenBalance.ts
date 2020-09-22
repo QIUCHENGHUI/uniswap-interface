@@ -5,14 +5,18 @@ import { useWallet } from 'use-wallet'
 import { provider } from 'web3-core'
 
 import { getBalance } from '../../utils/yam/erc20'
+import { useActiveWeb3React } from '..'
 
 const useTokenBalance = (tokenAddress: string) => {
   const [balance, setBalance] = useState(new BigNumber(0))
-  const { account, ethereum }: { account: string | null; ethereum: provider } = useWallet()
+  const { ethereum }: { ethereum: provider } = useWallet()
+  const { account } = useActiveWeb3React()
 
   const fetchBalance = useCallback(async () => {
-    const balance = await getBalance(ethereum, tokenAddress, account)
-    setBalance(new BigNumber(balance))
+    if (account) {
+      const balance = await getBalance(ethereum, tokenAddress, account)
+      setBalance(new BigNumber(balance))
+    }
   }, [account, ethereum, tokenAddress])
 
   useEffect(() => {

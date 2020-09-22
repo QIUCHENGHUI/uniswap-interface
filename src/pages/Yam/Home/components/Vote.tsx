@@ -3,8 +3,6 @@ import styled from 'styled-components'
 import BigNumber from 'bignumber.js'
 import Countdown, { CountdownRenderProps } from 'react-countdown'
 
-import { useWallet } from 'use-wallet'
-
 import Button from '../../../../components/YamButton'
 import Card from '../../../../components/YamCard'
 import CardContent from '../../../../components/CardContent'
@@ -15,6 +13,7 @@ import useYam from '../../../../hooks/yam/useYam'
 import useScalingFactor from '../../../../hooks/yam/useScalingFactor'
 
 import { delegate, didDelegate, getDelegatedBalance, getVotes } from '../../../../utils/yam/yamUtils'
+import { useActiveWeb3React } from '../../../../hooks'
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface VoteProps {}
@@ -27,7 +26,7 @@ const Vote: React.FC<VoteProps> = () => {
   const [delegated, setDelegated] = useState(false)
   const [delegatedBalance, setDelegatedBalance] = useState(new BigNumber(0))
 
-  const { account } = useWallet()
+  const { account } = useActiveWeb3React()
   const scalingFactor = useScalingFactor()
   const yam = useYam()
 

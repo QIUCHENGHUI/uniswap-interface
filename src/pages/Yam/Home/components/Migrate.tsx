@@ -25,13 +25,15 @@ import useYam from '../../../../hooks/yam/useYam'
 import { bnToDec } from '../../../../utils/yam'
 import { getContract } from '../../../../utils/yam/erc20'
 import { getMigrationEndTime, migrate } from '../../../../utils/yam/yamUtils'
+import { useActiveWeb3React } from '../../../../hooks'
 
 const Migrate: React.FC = () => {
   const [migrationEndDate, setMigrationEndDate] = useState<Date>()
   const [migrateButtonDisabled, setMigrateButtonDisabled] = useState(false)
   const [approvalDisabled, setApprovalDisabled] = useState(false)
 
-  const { account, ethereum } = useWallet()
+  const { ethereum } = useWallet()
+  const { account } = useActiveWeb3React()
   const scalingFactor = useScalingFactor()
   const yam = useYam()
 

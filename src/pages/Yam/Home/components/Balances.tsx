@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import numeral from 'numeral'
-import { useWallet } from 'use-wallet'
 
 import Card from '../../../../components/YamCard'
 import CardContent from '../../../../components/CardContent'
@@ -17,12 +16,13 @@ import useYam from '../../../../hooks//yam/useYam'
 
 import { bnToDec } from '../../../../utils/yam'
 import { getV2Supply } from '../../../../utils/yam/yamUtils'
+import { useActiveWeb3React } from '../../../../hooks'
 
 const Balances: React.FC = () => {
   const [totalSupply, setTotalSupply] = useState<number>()
   const v2Balance = useTokenBalance(yamV2Address)
   const yam = useYam()
-  const { account } = useWallet()
+  const { account } = useActiveWeb3React()
 
   useEffect(() => {
     async function fetchTotalSupply() {

@@ -14,10 +14,12 @@ import ModalTitle from '../ModalTitle'
 import Spacer from '../Spacer'
 
 import WalletCard from './components/WalletCard'
+import { useActiveWeb3React } from '../../hooks'
 
 // eslint-disable-next-line react/prop-types
 const WalletProviderModal: React.FC<ModalProps> = ({ onDismiss = () => {} }) => {
-  const { account, connect } = useWallet()
+  const { connect } = useWallet()
+  const { account } = useActiveWeb3React()
 
   useEffect(() => {
     if (account) {

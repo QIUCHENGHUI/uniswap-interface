@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import BigNumber from 'bignumber.js'
-import { useWallet } from 'use-wallet'
-import { provider } from 'web3-core'
 import { Contract } from 'web3-eth-contract'
 
 import { getAllowance } from '../../utils/yam/erc20'
+import { useActiveWeb3React } from '..'
 
 const useAllowance = (tokenContract: Contract, poolContract?: Contract) => {
   const [allowance, setAllowance] = useState(new BigNumber(0))
-  const { account }: { account: string | null; ethereum: provider } = useWallet()
+  const { account } = useActiveWeb3React()
 
   const fetchAllowance = useCallback(async () => {
-    const allowance = await getAllowance(tokenContract, poolContract, account)
-    setAllowance(new BigNumber(allowance))
+    if (account) {
+      const allowance = await getAllowance(tokenContract, poolContract, account)
+      setAllowance(new BigNumber(allowance))
+    }
   }, [account, poolContract, tokenContract])
 
   useEffect(() => {

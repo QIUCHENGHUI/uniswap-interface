@@ -22,6 +22,7 @@ import useUnharvested from '../../../../hooks/yam/useUnharvested'
 import useYam from '../../../../hooks/yam/useYam'
 
 import { getContract } from '../../../../utils/yam/erc20'
+import { useActiveWeb3React } from '../../../../hooks'
 
 // eslint-disable-next-line react/prop-types
 const MigrationInstructionsModal: React.FC<ModalProps> = ({ onDismiss }) => {
@@ -29,7 +30,8 @@ const MigrationInstructionsModal: React.FC<ModalProps> = ({ onDismiss }) => {
 
   const [onPresentUnlockModal] = useModal(<WalletProviderModal />)
   const harvested = useUnharvested()
-  const { account, ethereum } = useWallet()
+  const { ethereum } = useWallet()
+  const { account } = useActiveWeb3React()
   const hasHarvested = !!account && !harvested
 
   const yam = useYam()

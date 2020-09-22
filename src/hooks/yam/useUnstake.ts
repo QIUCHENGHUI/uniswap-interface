@@ -1,12 +1,12 @@
 import { useCallback } from 'react'
 
-import { useWallet } from 'use-wallet'
 import { Contract } from 'web3-eth-contract'
+import { useActiveWeb3React } from '..'
 
 import { unstake } from '../../utils/yam/yamUtils'
 
 const useUnstake = (poolContract: Contract | undefined) => {
-  const { account } = useWallet()
+  const { account } = useActiveWeb3React()
 
   const handleUnstake = useCallback(
     async (amount: string) => {

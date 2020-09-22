@@ -1,20 +1,22 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import BigNumber from 'bignumber.js'
-import { useWallet } from 'use-wallet'
 import { Contract } from 'web3-eth-contract'
 
 import { getEarned } from '../../utils/yam/yamUtils'
 import useYam from './useYam'
+import { useActiveWeb3React } from '..'
 
 const useEarnings = (pool: Contract | undefined) => {
   const [balance, setBalance] = useState(new BigNumber(0))
-  const { account }: { account: string | null } = useWallet()
+  const { account } = useActiveWeb3React()
   const yam = useYam()
 
   const fetchBalance = useCallback(async () => {
-    const balance = await getEarned(yam, pool, account)
-    setBalance(new BigNumber(balance))
+    if (account) {
+      const balance = await getEarned(yam, pool, account)
+      setBalance(new BigNumber(balance))
+    }
   }, [account, pool, yam])
 
   useEffect(() => {

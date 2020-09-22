@@ -15,10 +15,12 @@ import ModalContent from '../ModalContent'
 import ModalTitle from '../ModalTitle'
 import Spacer from '../Spacer'
 import Value from '../Value'
+import { useActiveWeb3React } from '../../hooks'
 
 // eslint-disable-next-line react/prop-types
 const AccountModal: React.FC<ModalProps> = ({ onDismiss }) => {
-  const { account, reset } = useWallet()
+  const { reset } = useWallet()
+  const { account } = useActiveWeb3React()
 
   const handleSignOutClick = useCallback(() => {
     onDismiss?.()

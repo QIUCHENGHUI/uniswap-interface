@@ -1,7 +1,6 @@
 /* eslint-disable react/prop-types */
 import React, { useCallback, useEffect, useState } from 'react'
 import styled from 'styled-components'
-import { useWallet } from 'use-wallet'
 import Countdown, { CountdownRenderProps } from 'react-countdown'
 import numeral from 'numeral'
 
@@ -18,6 +17,7 @@ import { Farm } from '../../../../contexts/yam/Farms'
 
 import { bnToDec } from '../../../../utils/yam'
 import { getEarned, getPoolStartTime } from '../../../../utils/yam/yamUtils'
+import { useActiveWeb3React } from '../../../../hooks'
 
 const FarmCards: React.FC = () => {
   const [farms] = useFarms()
@@ -65,7 +65,7 @@ const FarmCard: React.FC<FarmCardProps> = ({ farm }) => {
   const [harvestable, setHarvestable] = useState(0)
 
   const { contract } = farm
-  const { account } = useWallet()
+  const { account } = useActiveWeb3React()
   const yam = useYam()
 
   const getStartTime = useCallback(async () => {
