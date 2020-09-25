@@ -5,13 +5,14 @@ import styled from 'styled-components'
 import { useActiveWeb3React } from '../../hooks'
 import { useAllTokens } from '../../hooks/Tokens'
 import { ExternalLink, TYPE } from '../../theme'
-import { getEtherscanLink, shortenAddress } from '../../utils'
+import { getEtherscanLink, isDefaultToken, shortenAddress } from '../../utils'
 import CurrencyLogo from '../CurrencyLogo'
 import Modal from '../Modal'
 import { AutoRow, RowBetween } from '../Row'
 import { AutoColumn } from '../Column'
 import { AlertTriangle } from 'react-feather'
 import { ButtonError } from '../Button'
+import { useDefaultTokenList } from '../../state/lists/hooks'
 
 const Wrapper = styled.div<{ error: boolean }>`
   background: ${({ theme }) => transparentize(0.6, theme.bg3)};
@@ -39,6 +40,8 @@ interface TokenWarningCardProps {
 
 function TokenWarningCard({ token }: TokenWarningCardProps) {
   const { chainId } = useActiveWeb3React()
+  const defaultTokens = useDefaultTokenList()
+  const isDefault = isDefaultToken(defaultTokens, token)
 
   const tokenSymbol = token?.symbol?.toLowerCase() ?? ''
   const tokenName = token?.name?.toLowerCase() ?? ''
@@ -46,18 +49,18 @@ function TokenWarningCard({ token }: TokenWarningCardProps) {
   const allTokens = useAllTokens()
 
   const duplicateNameOrSymbol = useMemo(() => {
-    if (!token || !chainId) return false
+    if (isDefault || !token || !chainId) return false
 
     return Object.keys(allTokens).some(tokenAddress => {
       const userToken = allTokens[tokenAddress]
       if (userToken.equals(token)) {
         return false
       }
-      return userToken.symbol?.toLowerCase() === tokenSymbol || userToken.name?.toLowerCase() === tokenName
+      return userToken?.symbol?.toLowerCase() === tokenSymbol || userToken?.name?.toLowerCase() === tokenName
     })
-  }, [token, chainId, allTokens, tokenSymbol, tokenName])
+  }, [isDefault, token, chainId, allTokens, tokenSymbol, tokenName])
 
-  if (!token) return null
+  if (isDefault || !token) return null
 
   return (
     <Wrapper error={duplicateNameOrSymbol}>

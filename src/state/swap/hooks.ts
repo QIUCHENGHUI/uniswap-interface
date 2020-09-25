@@ -1,11 +1,11 @@
 import useENS from '../../hooks/useENS'
 import { Version } from '../../hooks/useToggledVersion'
 import { parseUnits } from '@ethersproject/units'
-import { Currency, CurrencyAmount, ETHER, JSBI, Token, TokenAmount, Trade } from '@uniswap/sdk'
+import { Currency, CurrencyAmount, JSBI, Token, TokenAmount, Trade, ETHER } from '@uniswap/sdk'
 import { ParsedQs } from 'qs'
 import { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useV1Trade } from '../../data/V1'
+import { useV1Trade, useMooniswapTrade } from '../../data/V1'
 import { useActiveWeb3React } from '../../hooks'
 import { useCurrency } from '../../hooks/Tokens'
 import { useTradeExactIn, useTradeExactOut } from '../../hooks/Trades'
@@ -18,6 +18,8 @@ import { SwapState } from './reducer'
 import useToggledVersion from '../../hooks/useToggledVersion'
 import { useUserSlippageTolerance } from '../user/hooks'
 import { computeSlippageAdjustedAmounts } from '../../utils/prices'
+import { wrappedMooniswapCurrencyAmount, wrappedUniswapZeroCurrency } from '../../utils/wrappedCurrency'
+import { BigNumber } from '@ethersproject/bignumber'
 
 export function useSwapState(): AppState['swap'] {
   return useSelector<AppState, AppState['swap']>(state => state.swap)
@@ -113,9 +115,10 @@ export function useDerivedSwapInfo(): {
   parsedAmount: CurrencyAmount | undefined
   v2Trade: Trade | undefined
   inputError?: string
-  v1Trade: Trade | undefined
+  v1Trade: Trade | undefined,
+  mooniswapTrade: [Trade, BigNumber[]] | [undefined, undefined] | undefined
 } {
-  const { account } = useActiveWeb3React()
+  const { account, chainId } = useActiveWeb3React()
 
   const toggledVersion = useToggledVersion()
 
@@ -191,6 +194,8 @@ export function useDerivedSwapInfo(): {
   const slippageAdjustedAmountsV1 =
     v1Trade && allowedSlippage && computeSlippageAdjustedAmounts(v1Trade, allowedSlippage)
 
+  const mooniswapTrade = useMooniswapTrade(wrappedUniswapZeroCurrency(currencies[Field.INPUT], chainId), wrappedUniswapZeroCurrency(currencies[Field.OUTPUT],chainId), wrappedMooniswapCurrencyAmount(parsedAmount, chainId))
+
   // compare input balance to max input based on version
   const [balanceIn, amountIn] = [
     currencyBalances[Field.INPUT],
@@ -213,7 +218,8 @@ export function useDerivedSwapInfo(): {
     parsedAmount,
     v2Trade: v2Trade ?? undefined,
     inputError,
-    v1Trade
+    v1Trade,
+    mooniswapTrade
   }
 }
 

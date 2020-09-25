@@ -18,18 +18,21 @@ export default function SwapModalHeader({
   allowedSlippage,
   recipient,
   showAcceptChanges,
-  onAcceptChanges
+  onAcceptChanges,
+  formattedAmounts
 }: {
   trade: Trade
   allowedSlippage: number
   recipient: string | null
   showAcceptChanges: boolean
   onAcceptChanges: () => void
+  formattedAmounts: { [field in Field]?: string }
 }) {
   const slippageAdjustedAmounts = useMemo(() => computeSlippageAdjustedAmounts(trade, allowedSlippage), [
     trade,
     allowedSlippage
   ])
+
   const { priceImpactWithoutFee } = useMemo(() => computeTradePriceBreakdown(trade), [trade])
   const priceImpactSeverity = warningSeverity(priceImpactWithoutFee)
 
@@ -45,7 +48,8 @@ export default function SwapModalHeader({
             fontWeight={500}
             color={showAcceptChanges && trade.tradeType === TradeType.EXACT_OUTPUT ? theme.primary1 : ''}
           >
-            {trade.inputAmount.toSignificant(6)}
+            {formattedAmounts[Field.INPUT]}
+            {/* {trade.inputAmount.toSignificant(6)} */}
           </TruncatedText>
         </RowFixed>
         <RowFixed gap={'0px'}>
@@ -71,7 +75,8 @@ export default function SwapModalHeader({
                 : ''
             }
           >
-            {trade.outputAmount.toSignificant(6)}
+            {formattedAmounts[Field.OUTPUT]}
+            {/* {trade.outputAmount.toSignificant(6)} */}
           </TruncatedText>
         </RowFixed>
         <RowFixed gap={'0px'}>

@@ -1,11 +1,12 @@
 import { Currency, CurrencyAmount, JSBI, Pair, Percent, TokenAmount } from '@uniswap/sdk'
 import { useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { usePair } from '../../data/Reserves'
+import { useMooniSwapPair } from '../../data/Reserves'
+// usePair
 import { useTotalSupply } from '../../data/TotalSupply'
 
 import { useActiveWeb3React } from '../../hooks'
-import { wrappedCurrency } from '../../utils/wrappedCurrency'
+import { wrappedUniswapZeroCurrency } from '../../utils/wrappedCurrency'
 import { AppDispatch, AppState } from '../index'
 import { tryParseAmount } from '../swap/hooks'
 import { useTokenBalances } from '../wallet/hooks'
@@ -33,13 +34,13 @@ export function useDerivedBurnInfo(
   const { independentField, typedValue } = useBurnState()
 
   // pair + totalsupply
-  const [, pair] = usePair(currencyA, currencyB)
+  const [, pair] = useMooniSwapPair(wrappedUniswapZeroCurrency(currencyA, chainId), wrappedUniswapZeroCurrency(currencyB, chainId))
 
   // balances
   const relevantTokenBalances = useTokenBalances(account ?? undefined, [pair?.liquidityToken])
   const userLiquidity: undefined | TokenAmount = relevantTokenBalances?.[pair?.liquidityToken?.address ?? '']
 
-  const [tokenA, tokenB] = [wrappedCurrency(currencyA, chainId), wrappedCurrency(currencyB, chainId)]
+  const [tokenA, tokenB] = [wrappedUniswapZeroCurrency(currencyA, chainId), wrappedUniswapZeroCurrency(currencyB, chainId)]
   const tokens = {
     [Field.CURRENCY_A]: tokenA,
     [Field.CURRENCY_B]: tokenB,

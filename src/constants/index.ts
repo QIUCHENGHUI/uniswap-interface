@@ -2,6 +2,7 @@ import { ChainId, JSBI, Percent, Token, WETH } from '@uniswap/sdk'
 import { AbstractConnector } from '@web3-react/abstract-connector'
 
 import { fortmatic, injected, portis, walletconnect, walletlink } from '../connectors'
+import { UniswapZeroETHER } from '../utils/wrappedCurrency'
 
 export const ROUTER_ADDRESS = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
 
@@ -16,20 +17,28 @@ export const USDT = new Token(ChainId.MAINNET, '0xdAC17F958D2ee523a2206206994597
 export const COMP = new Token(ChainId.MAINNET, '0xc00e94Cb662C3520282E6f5717214004A7f26888', 18, 'COMP', 'Compound')
 export const MKR = new Token(ChainId.MAINNET, '0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2', 18, 'MKR', 'Maker')
 export const AMPL = new Token(ChainId.MAINNET, '0xD46bA6D942050d489DBd938a2C909A5d5039A161', 9, 'AMPL', 'Ampleforth')
+export const CHI = new Token(ChainId.MAINNET, '0x0000000000004946c0e9F43F4Dee607b0eF1fA1c', 0, 'CHI', 'Chi Gastoken by 1inch')
 
-const WETH_ONLY: ChainTokenList = {
-  [ChainId.MAINNET]: [WETH[ChainId.MAINNET]],
-  [ChainId.ROPSTEN]: [WETH[ChainId.ROPSTEN]],
-  [ChainId.RINKEBY]: [WETH[ChainId.RINKEBY]],
-  [ChainId.GÖRLI]: [WETH[ChainId.GÖRLI]],
-  [ChainId.KOVAN]: [WETH[ChainId.KOVAN]]
+// const WETH_ONLY: ChainTokenList = {
+//   [ChainId.MAINNET]: [WETH[ChainId.MAINNET]],
+//   [ChainId.ROPSTEN]: [WETH[ChainId.ROPSTEN]],
+//   [ChainId.RINKEBY]: [WETH[ChainId.RINKEBY]],
+//   [ChainId.GÖRLI]: [WETH[ChainId.GÖRLI]],
+//   [ChainId.KOVAN]: [WETH[ChainId.KOVAN]]
+// }
+const ETH_ONLY: ChainTokenList = {
+  [ChainId.MAINNET]: [UniswapZeroETHER],
+  [ChainId.ROPSTEN]: [UniswapZeroETHER],
+  [ChainId.RINKEBY]: [UniswapZeroETHER],
+  [ChainId.GÖRLI]: [UniswapZeroETHER],
+  [ChainId.KOVAN]: [UniswapZeroETHER]
 }
 
-// used to construct intermediary pairs for trading
-export const BASES_TO_CHECK_TRADES_AGAINST: ChainTokenList = {
-  ...WETH_ONLY,
-  [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], DAI, USDC, USDT, COMP, MKR]
-}
+// // used to construct intermediary pairs for trading
+// export const BASES_TO_CHECK_TRADES_AGAINST: ChainTokenList = {
+//   ...WETH_ONLY,
+//   [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], DAI, USDC, USDT, COMP, MKR]
+// }
 
 /**
  * Some tokens can only be swapped via certain pairs, so we override the list of bases that are considered for these
@@ -41,16 +50,44 @@ export const CUSTOM_BASES: { [chainId in ChainId]?: { [tokenAddress: string]: To
   }
 }
 
+// // used for display in the default list when adding liquidity
+// export const SUGGESTED_BASES: ChainTokenList = {
+//   ...WETH_ONLY,
+//   [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], DAI, USDC, USDT]
+// }
+
+// // used to construct the list of all pairs we consider by default in the frontend
+// export const BASES_TO_TRACK_LIQUIDITY_FOR: ChainTokenList = {
+//   ...WETH_ONLY,
+//   [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], DAI, USDC, USDT]
+// }
+
+// export const PINNED_PAIRS: { readonly [chainId in ChainId]?: [Token, Token][] } = {
+//   [ChainId.MAINNET]: [
+//     [
+//       new Token(ChainId.MAINNET, '0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643', 8, 'cDAI', 'Compound Dai'),
+//       new Token(ChainId.MAINNET, '0x39AA39c021dfbaE8faC545936693aC917d5E7563', 8, 'cUSDC', 'Compound USD Coin')
+//     ],
+//     [USDC, USDT],
+//     [DAI, USDT]
+//   ]
+// }
+// used to construct intermediary pairs for trading
+export const BASES_TO_CHECK_TRADES_AGAINST: ChainTokenList = {
+  ...ETH_ONLY,
+  [ChainId.MAINNET]: [DAI, USDC, USDT, COMP, MKR, CHI]
+}
+
 // used for display in the default list when adding liquidity
 export const SUGGESTED_BASES: ChainTokenList = {
-  ...WETH_ONLY,
-  [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], DAI, USDC, USDT]
+  ...ETH_ONLY,
+  [ChainId.MAINNET]: [DAI, USDC, USDT, CHI]
 }
 
 // used to construct the list of all pairs we consider by default in the frontend
 export const BASES_TO_TRACK_LIQUIDITY_FOR: ChainTokenList = {
-  ...WETH_ONLY,
-  [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], DAI, USDC, USDT]
+  ...ETH_ONLY,
+  [ChainId.MAINNET]: [UniswapZeroETHER, DAI, USDC, USDT, CHI]
 }
 
 export const PINNED_PAIRS: { readonly [chainId in ChainId]?: [Token, Token][] } = {
@@ -60,10 +97,12 @@ export const PINNED_PAIRS: { readonly [chainId in ChainId]?: [Token, Token][] } 
       new Token(ChainId.MAINNET, '0x39AA39c021dfbaE8faC545936693aC917d5E7563', 8, 'cUSDC', 'Compound USD Coin')
     ],
     [USDC, USDT],
-    [DAI, USDT]
+    [DAI, USDT],
+    [UniswapZeroETHER, CHI],
+    [USDC, CHI],
+    [UniswapZeroETHER, USDC]
   ]
 }
-
 export interface WalletInfo {
   connector?: AbstractConnector
   name: string
@@ -162,3 +201,6 @@ export const BLOCKED_PRICE_IMPACT_NON_EXPERT: Percent = new Percent(JSBI.BigInt(
 // used to ensure the user doesn't send so much ETH so they end up with <.01
 export const MIN_ETH: JSBI = JSBI.exponentiate(JSBI.BigInt(10), JSBI.BigInt(16)) // .01 ETH
 export const BETTER_TRADE_LINK_THRESHOLD = new Percent(JSBI.BigInt(75), JSBI.BigInt(10000))
+
+// mooniswap
+export const REFERRAL_ADDRESS_STORAGE_KEY = 'referral-address'

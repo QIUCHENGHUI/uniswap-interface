@@ -3,6 +3,7 @@ import { Tags, TokenInfo, TokenList } from '@uniswap/token-lists'
 import { useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { AppState } from '../index'
+import { DEFAULT_TOKEN_LIST_URL } from '../../constants/lists'
 
 type TagDetails = Tags[keyof Tags]
 export interface TagInfo extends TagDetails {
@@ -20,6 +21,22 @@ export class WrappedTokenInfo extends Token {
     this.tokenInfo = tokenInfo
     this.tags = tags
   }
+  public get logoURI(): string | undefined {
+    return this.tokenInfo.logoURI
+  }
+}
+
+/**
+ * Token instances created from token info.
+ */
+export class MooniSwapWrappedTokenInfo extends Token {
+  public readonly tokenInfo: TokenInfo
+
+  constructor(tokenInfo: TokenInfo) {
+    super(tokenInfo.chainId, tokenInfo.address, tokenInfo.decimals, tokenInfo.symbol, tokenInfo.name)
+    this.tokenInfo = tokenInfo
+  }
+
   public get logoURI(): string | undefined {
     return this.tokenInfo.logoURI
   }
@@ -70,6 +87,31 @@ export function listToTokenMap(list: TokenList): TokenAddressMap {
   return map
 }
 
+export function mooniSwaplistToTokenMap(list: TokenList): TokenAddressMap {
+  const result = listCache?.get(list)
+  if (result) return result
+
+  const map = list.tokens.reduce<TokenAddressMap>(
+    (tokenMap, tokenInfo) => {
+      const token = new MooniSwapWrappedTokenInfo(tokenInfo)
+      if (tokenMap[token.chainId][token.address] !== undefined) throw Error('Duplicate tokens.')
+      if (token.address === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
+        return { ...tokenMap }
+      }
+      return {
+        ...tokenMap,
+        [token.chainId]: {
+          ...tokenMap[token.chainId],
+          [token.address]: token
+        }
+      }
+    },
+    { ...EMPTY_LIST }
+  )
+  listCache?.set(list, map)
+  return map
+}
+
 export function useTokenList(url: string | undefined): TokenAddressMap {
   const lists = useSelector<AppState, AppState['lists']['byUrl']>(state => state.lists.byUrl)
   return useMemo(() => {
@@ -82,6 +124,15 @@ export function useTokenList(url: string | undefined): TokenAddressMap {
       console.error('Could not show token list due to error', error)
       return EMPTY_LIST
     }
+  }, [lists, url])
+}
+
+export function useMooniSwapTokenList(url: string): TokenAddressMap {
+  const lists = useSelector<AppState, AppState['lists']['byUrl']>(state => state.lists.byUrl)
+  return useMemo(() => {
+    const current = lists[url]?.current
+    if (!current) return EMPTY_LIST
+    return mooniSwaplistToTokenMap(current)
   }, [lists, url])
 }
 
@@ -102,6 +153,11 @@ export function useSelectedListInfo(): { current: TokenList | null; pending: Tok
     pending: list?.pendingUpdate ?? null,
     loading: list?.loadingRequestId !== null
   }
+}
+
+export function useDefaultTokenList(): TokenAddressMap {
+  return useMooniSwapTokenList(DEFAULT_TOKEN_LIST_URL)
+  // return useTokenList(DEFAULT_TOKEN_LIST_URL)
 }
 
 // returns all downloaded current lists

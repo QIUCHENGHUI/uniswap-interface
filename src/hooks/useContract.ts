@@ -1,6 +1,9 @@
 import { Contract } from '@ethersproject/contracts'
 import { ChainId, WETH } from '@uniswap/sdk'
 import { abi as IUniswapV2PairABI } from '@uniswap/v2-core/build/IUniswapV2Pair.json'
+import MooniswapABI from '../constants/v1-mooniswap/v1_mooniswap_exchange.json'
+import MooniswapFactoryABI from '../constants/v1-mooniswap/v1_mooniswap_factory.json'
+import MooniswapHelperABI from '../constants/v1-mooniswap/MooniswapHelper.json'
 import { useMemo } from 'react'
 import ENS_ABI from '../constants/abis/ens-registrar.json'
 import ENS_PUBLIC_RESOLVER_ABI from '../constants/abis/ens-public-resolver.json'
@@ -10,9 +13,15 @@ import { MIGRATOR_ABI, MIGRATOR_ADDRESS } from '../constants/abis/migrator'
 import UNISOCKS_ABI from '../constants/abis/unisocks.json'
 import WETH_ABI from '../constants/abis/weth.json'
 import { MULTICALL_ABI, MULTICALL_NETWORKS } from '../constants/multicall'
+// import { V1_EXCHANGE_ABI, V1_FACTORY_ABI, V1_FACTORY_ADDRESSES } from '../constants/v1'
+import { V1_MOONISWAP_FACTORY_ADDRESSES, V1_MOONISWAP_HELPER_ADDRESSES } from '../constants/v1-mooniswap'
 import { V1_EXCHANGE_ABI, V1_FACTORY_ABI, V1_FACTORY_ADDRESSES } from '../constants/v1'
+import { ONE_SPLIT_ABI, ONE_SPLIT_ADDRESSES } from '../constants/one-split'
 import { getContract } from '../utils'
 import { useActiveWeb3React } from './index'
+import { UNISWAP_V2_HELPER_ABI, UNISWAP_V2_HELPER_ADDRESS } from '../constants/abis/uniswap-v2-helper'
+import { UNISWAP_V2_PAIR } from '../constants/abis/uniswap-v2-pair'
+import { UNISWAP_V2_FACTORY_ABI, UNISWAP_V2_FACTORY_ADDRESS } from '../constants/abis/uniswap-v2-factory'
 
 // returns null on errors
 function useContract(address: string | undefined, ABI: any, withSignerIfPossible = true): Contract | null {
@@ -67,6 +76,25 @@ export function useENSRegistrarContract(withSignerIfPossible?: boolean): Contrac
   return useContract(address, ENS_ABI, withSignerIfPossible)
 }
 
+export function useUniswapV2HelperContract(): Contract | null {
+  const { chainId } = useActiveWeb3React()
+  return useContract(chainId && UNISWAP_V2_HELPER_ADDRESS, UNISWAP_V2_HELPER_ABI, false)
+}
+
+export function useUniswapV2PairContract(pairAddress: string | undefined): Contract | null {
+  const { chainId } = useActiveWeb3React()
+  return useContract(chainId && pairAddress, UNISWAP_V2_PAIR, false)
+}
+
+export function useUniswapV2FactoryContract(): Contract | null {
+  const { chainId } = useActiveWeb3React()
+  return useContract(chainId && UNISWAP_V2_FACTORY_ADDRESS, UNISWAP_V2_FACTORY_ABI, false)
+}
+
+export function useMooniswapMigratorContract(): Contract | null {
+  return useContract(MIGRATOR_ADDRESS, MIGRATOR_ABI, true)
+}
+
 export function useENSResolverContract(address: string | undefined, withSignerIfPossible?: boolean): Contract | null {
   return useContract(address, ENS_PUBLIC_RESOLVER_ABI, withSignerIfPossible)
 }
@@ -92,3 +120,33 @@ export function useSocksController(): Contract | null {
     false
   )
 }
+
+////// MOONISWAP ////////
+
+export function useMooniswapV1FactoryContract(): Contract | null {
+  const { chainId } = useActiveWeb3React()
+  return useContract(chainId && V1_MOONISWAP_FACTORY_ADDRESSES[chainId], MooniswapFactoryABI, false)
+}
+
+export function useMooniswapV1HelperContract(): Contract | null {
+  const { chainId } = useActiveWeb3React()
+  return useContract(chainId && V1_MOONISWAP_HELPER_ADDRESSES[chainId], MooniswapHelperABI, false)
+}
+
+export function useMooniswapContract(poolAddress?: string, withSignerIfPossible?: boolean): Contract | null {
+  return useContract(poolAddress, MooniswapABI, withSignerIfPossible)
+}
+
+export function useOneSplit(): Contract | null {
+  const { chainId } = useActiveWeb3React()
+  return useContract(chainId && ONE_SPLIT_ADDRESSES[chainId], ONE_SPLIT_ABI, false)
+}
+
+// export function useChiController(): Contract | null {
+//   const { chainId } = useActiveWeb3React()
+//   return useContract(
+//     chainId === ChainId.MAINNET ? '0x0000000000004946c0e9F43F4Dee607b0eF1fA1c' : undefined,
+//     CHI_ABI,
+//     false
+//   )
+// }

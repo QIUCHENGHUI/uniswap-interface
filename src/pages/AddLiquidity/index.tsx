@@ -1,6 +1,5 @@
 import { BigNumber } from '@ethersproject/bignumber'
-import { TransactionResponse } from '@ethersproject/providers'
-import { Currency, currencyEquals, ETHER, TokenAmount, WETH } from '@uniswap/sdk'
+import { Currency, currencyEquals, TokenAmount, WETH, ETHER } from '@uniswap/sdk'
 import React, { useCallback, useContext, useState } from 'react'
 import { Plus } from 'react-feather'
 import ReactGA from 'react-ga'
@@ -17,7 +16,7 @@ import { AddRemoveTabs } from '../../components/NavigationTabs'
 import { MinimalPositionCard } from '../../components/PositionCard'
 import Row, { RowBetween, RowFlat } from '../../components/Row'
 
-import { ROUTER_ADDRESS } from '../../constants'
+// import { ROUTER_ADDRESS } from '../../constants'
 import { PairState } from '../../data/Reserves'
 import { useActiveWeb3React } from '../../hooks'
 import { useCurrency } from '../../hooks/Tokens'
@@ -25,13 +24,17 @@ import { ApprovalState, useApproveCallback } from '../../hooks/useApproveCallbac
 import { useWalletModalToggle } from '../../state/application/hooks'
 import { Field } from '../../state/mint/actions'
 import { useDerivedMintInfo, useMintActionHandlers, useMintState } from '../../state/mint/hooks'
+// import { useDerivedMintInfo, useMintActionHandlers, useMintState } from '../../state/mint-mooniswap/hooks'
 
 import { useTransactionAdder } from '../../state/transactions/hooks'
-import { useIsExpertMode, useUserDeadline, useUserSlippageTolerance } from '../../state/user/hooks'
+import { useIsExpertMode, useUserSlippageTolerance } from '../../state/user/hooks'
 import { TYPE } from '../../theme'
-import { calculateGasMargin, calculateSlippageAmount, getRouterContract } from '../../utils'
+import { calculateGasMargin, calculateSlippageAmount, getMooniswapContract, getMooniswapFactoryContract } from '../../utils'
+// import { getRouterContractt, getMooniswapFactoryContract } from '../../utils'
+
 import { maxAmountSpend } from '../../utils/maxAmountSpend'
-import { wrappedCurrency } from '../../utils/wrappedCurrency'
+import { wrappedMooniswapCurrencyAmount, wrappedUniswapZeroCurrency } from '../../utils/wrappedCurrency'
+// wrappedCurrency, 
 import AppBody from '../AppBody'
 import { Dots, Wrapper } from '../Pool/styleds'
 import { ConfirmAddModalBottom } from './ConfirmAddModalBottom'
@@ -74,7 +77,7 @@ export default function AddLiquidity({
     liquidityMinted,
     poolTokenPercentage,
     error
-  } = useDerivedMintInfo(currencyA ?? undefined, currencyB ?? undefined)
+  } = useDerivedMintInfo(currencyA ?? undefined , currencyB ?? undefined)
   const { onFieldAInput, onFieldBInput } = useMintActionHandlers(noLiquidity)
 
   const isValid = !error
@@ -84,7 +87,7 @@ export default function AddLiquidity({
   const [attemptingTxn, setAttemptingTxn] = useState<boolean>(false) // clicked confirm
 
   // txn values
-  const [deadline] = useUserDeadline() // custom from users settings
+  // const [deadline] = useUserDeadline() // custom from users settings
   const [allowedSlippage] = useUserSlippageTolerance() // custom from users
   const [txHash, setTxHash] = useState<string>('')
 
@@ -116,88 +119,47 @@ export default function AddLiquidity({
   )
 
   // check whether the user has approved the router on the tokens
-  const [approvalA, approveACallback] = useApproveCallback(parsedAmounts[Field.CURRENCY_A], ROUTER_ADDRESS)
-  const [approvalB, approveBCallback] = useApproveCallback(parsedAmounts[Field.CURRENCY_B], ROUTER_ADDRESS)
+  const [approvalA, approveACallback] = useApproveCallback(parsedAmounts[Field.CURRENCY_A], pair?.poolAddress)
+  const [approvalB, approveBCallback] = useApproveCallback(parsedAmounts[Field.CURRENCY_B], pair?.poolAddress)
 
   const addTransaction = useTransactionAdder()
 
-  async function onAdd() {
-    if (!chainId || !library || !account) return
-    const router = getRouterContract(chainId, library, account)
+  async function onPoolCreate() {
+    if (!chainId || !library || !account || !currencyA || !currencyB) return
 
-    const { [Field.CURRENCY_A]: parsedAmountA, [Field.CURRENCY_B]: parsedAmountB } = parsedAmounts
-    if (!parsedAmountA || !parsedAmountB || !currencyA || !currencyB) {
-      return
-    }
-
-    const amountsMin = {
-      [Field.CURRENCY_A]: calculateSlippageAmount(parsedAmountA, noLiquidity ? 0 : allowedSlippage)[0],
-      [Field.CURRENCY_B]: calculateSlippageAmount(parsedAmountB, noLiquidity ? 0 : allowedSlippage)[0]
-    }
-
-    const deadlineFromNow = Math.ceil(Date.now() / 1000) + deadline
-
-    let estimate,
-      method: (...args: any) => Promise<TransactionResponse>,
-      args: Array<string | string[] | number>,
-      value: BigNumber | null
-    if (currencyA === ETHER || currencyB === ETHER) {
-      const tokenBIsETH = currencyB === ETHER
-      estimate = router.estimateGas.addLiquidityETH
-      method = router.addLiquidityETH
-      args = [
-        wrappedCurrency(tokenBIsETH ? currencyA : currencyB, chainId)?.address ?? '', // token
-        (tokenBIsETH ? parsedAmountA : parsedAmountB).raw.toString(), // token desired
-        amountsMin[tokenBIsETH ? Field.CURRENCY_A : Field.CURRENCY_B].toString(), // token min
-        amountsMin[tokenBIsETH ? Field.CURRENCY_B : Field.CURRENCY_A].toString(), // eth min
-        account,
-        deadlineFromNow
-      ]
-      value = BigNumber.from((tokenBIsETH ? parsedAmountB : parsedAmountA).raw.toString())
-    } else {
-      estimate = router.estimateGas.addLiquidity
-      method = router.addLiquidity
-      args = [
-        wrappedCurrency(currencyA, chainId)?.address ?? '',
-        wrappedCurrency(currencyB, chainId)?.address ?? '',
-        parsedAmountA.raw.toString(),
-        parsedAmountB.raw.toString(),
-        amountsMin[Field.CURRENCY_A].toString(),
-        amountsMin[Field.CURRENCY_B].toString(),
-        account,
-        deadlineFromNow
-      ]
-      value = null
-    }
+    const mooniswapFactory = getMooniswapFactoryContract(chainId, library, account)
+    const estimate = mooniswapFactory.estimateGas.deploy
+    const method = mooniswapFactory.deploy
+    const args = [
+      wrappedUniswapZeroCurrency(currencyA, chainId)?.address, wrappedUniswapZeroCurrency(currencyB, chainId)?.address
+    ]
 
     setAttemptingTxn(true)
-    await estimate(...args, value ? { value } : {})
+
+    await estimate(...args, {})
       .then(estimatedGasLimit =>
         method(...args, {
-          ...(value ? { value } : {}),
           gasLimit: calculateGasMargin(estimatedGasLimit)
-        }).then(response => {
+        }).then((response: any) => {
           setAttemptingTxn(false)
 
           addTransaction(response, {
             summary:
-              'Add ' +
-              parsedAmounts[Field.CURRENCY_A]?.toSignificant(3) +
+              'Create Pool ' +
+              currencyA.symbol +
               ' ' +
-              currencies[Field.CURRENCY_A]?.symbol +
-              ' and ' +
-              parsedAmounts[Field.CURRENCY_B]?.toSignificant(3) +
-              ' ' +
-              currencies[Field.CURRENCY_B]?.symbol
+              currencyB.symbol
           })
 
           setTxHash(response.hash)
 
           ReactGA.event({
             category: 'Liquidity',
-            action: 'Add',
+            action: 'CreatePool',
             label: [currencies[Field.CURRENCY_A]?.symbol, currencies[Field.CURRENCY_B]?.symbol].join('/')
           })
+
+          setShowConfirm(true)
         })
       )
       .catch(error => {
@@ -207,7 +169,159 @@ export default function AddLiquidity({
           console.error(error)
         }
       })
+
+    // const estimate = mooniswap.estimateGas.deposit
   }
+
+
+  // mooniswap
+  async function onAdd() {	
+    if (!chainId || !library || !account || !pair?.poolAddress) return	
+    const mooniswap = getMooniswapContract(chainId, library, pair.poolAddress, account)	
+    const { [Field.CURRENCY_A]: parsedAmountA, [Field.CURRENCY_B]: parsedAmountB } = parsedAmounts
+    const tokenA = wrappedMooniswapCurrencyAmount(parsedAmountA, chainId)?.token
+    if (!parsedAmountA || !tokenA || !parsedAmountB || !currencyA || !currencyB || !liquidityMinted) {	
+      return	
+    }	
+    let value: BigNumber | null	
+    const estimate = mooniswap.estimateGas.deposit	
+    const method = mooniswap.deposit
+
+    const amounts = pair?.token0.equals(tokenA) ? [parsedAmountA, parsedAmountB] : [parsedAmountB, parsedAmountA]	
+    const args = [
+      amounts.map((x) => x.raw.toString()),	
+      amounts.map((x) => calculateSlippageAmount(x, allowedSlippage)[0].toString())	
+    ]
+    if (currencyA === ETHER || currencyB === ETHER) {	
+      const tokenBIsETH = currencyB === ETHER	
+      value = BigNumber.from((tokenBIsETH ? parsedAmountB : parsedAmountA).raw.toString())	
+    } else {	
+      value = null	
+    }	
+    setAttemptingTxn(true)	
+    await estimate(...args, value ? { value } : {})	
+      .then(estimatedGasLimit =>	
+        method(...args, {	
+          ...(value ? { value } : {}),	
+          gasLimit: calculateGasMargin(estimatedGasLimit)	
+        }).then((response: any) => {	
+          setAttemptingTxn(false)	
+          addTransaction(response, {	
+            summary:	
+              'Add ' +	
+              parsedAmounts[Field.CURRENCY_A]?.toSignificant(3) +	
+              ' ' +	
+              currencies[Field.CURRENCY_A]?.symbol +	
+              ' and ' +	
+              parsedAmounts[Field.CURRENCY_B]?.toSignificant(3) +	
+              ' ' +	
+              currencies[Field.CURRENCY_B]?.symbol	
+          })	
+          setTxHash(response.hash)	
+          ReactGA.event({	
+            category: 'Liquidity',	
+            action: 'Add',	
+            label: [currencies[Field.CURRENCY_A]?.symbol, currencies[Field.CURRENCY_B]?.symbol].join('/')	
+          })	
+        })	
+      )	
+      .catch(error => {	
+        setAttemptingTxn(false)	
+        // we only care if the error is something _other_ than the user rejected the tx	
+        if (error?.code !== 4001) {	
+          console.error(error)	
+        }	
+      })	
+  }
+
+  // uniswap
+  // async function onAdd() {
+  //   if (!chainId || !library || !account) return
+  //   const router = getRouterContract(chainId, library, account)
+
+  //   const { [Field.CURRENCY_A]: parsedAmountA, [Field.CURRENCY_B]: parsedAmountB } = parsedAmounts
+  //   if (!parsedAmountA || !parsedAmountB || !currencyA || !currencyB) {
+  //     return
+  //   }
+
+  //   const amountsMin = {
+  //     [Field.CURRENCY_A]: calculateSlippageAmount(parsedAmountA, noLiquidity ? 0 : allowedSlippage)[0],
+  //     [Field.CURRENCY_B]: calculateSlippageAmount(parsedAmountB, noLiquidity ? 0 : allowedSlippage)[0]
+  //   }
+
+  //   const deadlineFromNow = Math.ceil(Date.now() / 1000) + deadline
+
+  //   let estimate,
+  //     method: (...args: any) => Promise<TransactionResponse>,
+  //     args: Array<string | string[] | number>,
+  //     value: BigNumber | null
+  //   if (currencyA === ETHER || currencyB === ETHER) {
+  //     const tokenBIsETH = currencyB === ETHER
+  //     estimate = router.estimateGas.addLiquidityETH
+  //     method = router.addLiquidityETH
+  //     args = [
+  //       wrappedCurrency(tokenBIsETH ? currencyA : currencyB, chainId)?.address ?? '', // token
+  //       (tokenBIsETH ? parsedAmountA : parsedAmountB).raw.toString(), // token desired
+  //       amountsMin[tokenBIsETH ? Field.CURRENCY_A : Field.CURRENCY_B].toString(), // token min
+  //       amountsMin[tokenBIsETH ? Field.CURRENCY_B : Field.CURRENCY_A].toString(), // eth min
+  //       account,
+  //       deadlineFromNow
+  //     ]
+  //     value = BigNumber.from((tokenBIsETH ? parsedAmountB : parsedAmountA).raw.toString())
+  //   } else {
+  //     estimate = router.estimateGas.addLiquidity
+  //     method = router.addLiquidity
+  //     args = [
+  //       wrappedCurrency(currencyA, chainId)?.address ?? '',
+  //       wrappedCurrency(currencyB, chainId)?.address ?? '',
+  //       parsedAmountA.raw.toString(),
+  //       parsedAmountB.raw.toString(),
+  //       amountsMin[Field.CURRENCY_A].toString(),
+  //       amountsMin[Field.CURRENCY_B].toString(),
+  //       account,
+  //       deadlineFromNow
+  //     ]
+  //     value = null
+  //   }
+
+  //   setAttemptingTxn(true)
+  //   await estimate(...args, value ? { value } : {})
+  //     .then(estimatedGasLimit =>
+  //       method(...args, {
+  //         ...(value ? { value } : {}),
+  //         gasLimit: calculateGasMargin(estimatedGasLimit)
+  //       }).then(response => {
+  //         setAttemptingTxn(false)
+
+  //         addTransaction(response, {
+  //           summary:
+  //             'Add ' +
+  //             parsedAmounts[Field.CURRENCY_A]?.toSignificant(3) +
+  //             ' ' +
+  //             currencies[Field.CURRENCY_A]?.symbol +
+  //             ' and ' +
+  //             parsedAmounts[Field.CURRENCY_B]?.toSignificant(3) +
+  //             ' ' +
+  //             currencies[Field.CURRENCY_B]?.symbol
+  //         })
+
+  //         setTxHash(response.hash)
+
+  //         ReactGA.event({
+  //           category: 'Liquidity',
+  //           action: 'Add',
+  //           label: [currencies[Field.CURRENCY_A]?.symbol, currencies[Field.CURRENCY_B]?.symbol].join('/')
+  //         })
+  //       })
+  //     )
+  //     .catch(error => {
+  //       setAttemptingTxn(false)
+  //       // we only care if the error is something _other_ than the user rejected the tx
+  //       if (error?.code !== 4001) {
+  //         console.error(error)
+  //       }
+  //     })
+  // }
 
   const modalHeader = () => {
     return noLiquidity ? (
@@ -426,17 +540,30 @@ export default function AddLiquidity({
                       )}
                     </RowBetween>
                   )}
-                <ButtonError
-                  onClick={() => {
-                    expertMode ? onAdd() : setShowConfirm(true)
-                  }}
-                  disabled={!isValid || approvalA !== ApprovalState.APPROVED || approvalB !== ApprovalState.APPROVED}
-                  error={!isValid && !!parsedAmounts[Field.CURRENCY_A] && !!parsedAmounts[Field.CURRENCY_B]}
-                >
-                  <Text fontSize={20} fontWeight={500}>
-                    {error ?? 'Supply'}
-                  </Text>
-                </ButtonError>
+
+                {pairState === PairState.NOT_EXISTS ? (
+                  <ButtonError
+                    onClick={() => {onPoolCreate()}}
+                    disabled={false}
+                    error={!isValid && !!parsedAmounts[Field.CURRENCY_A] && !!parsedAmounts[Field.CURRENCY_B]}
+                  >
+                    <Text fontSize={20} fontWeight={500}>
+                      {'Create Pool'}
+                    </Text>
+                  </ButtonError>
+                ) : (
+                  <ButtonError
+                    onClick={() => {
+                      expertMode ? onAdd() : setShowConfirm(true)
+                    }}
+                    disabled={!isValid || approvalA !== ApprovalState.APPROVED || approvalB !== ApprovalState.APPROVED}
+                    error={!isValid && !!parsedAmounts[Field.CURRENCY_A] && !!parsedAmounts[Field.CURRENCY_B]}
+                  >
+                    <Text fontSize={20} fontWeight={500}>
+                      {error ?? 'Supply'}
+                    </Text>
+                  </ButtonError>
+                )}
               </AutoColumn>
             )}
           </AutoColumn>

@@ -1,11 +1,12 @@
-import { Currency, CurrencyAmount, ETHER, JSBI, Pair, Percent, Price, TokenAmount } from '@uniswap/sdk'
+import { Currency, CurrencyAmount, ETHER, JSBI, Percent, Price, TokenAmount } from '@uniswap/sdk'
+// Pair,
 import { useCallback, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { PairState, usePair } from '../../data/Reserves'
+import { MockMooniSwapPair, PairState, useMooniSwapPair } from '../../data/Reserves'
 import { useTotalSupply } from '../../data/TotalSupply'
 
 import { useActiveWeb3React } from '../../hooks'
-import { wrappedCurrency, wrappedCurrencyAmount } from '../../utils/wrappedCurrency'
+import { wrappedMooniswapCurrencyAmount, wrappedUniswapZeroCurrency } from '../../utils/wrappedCurrency'
 import { AppDispatch, AppState } from '../index'
 import { tryParseAmount } from '../swap/hooks'
 import { useCurrencyBalances } from '../wallet/hooks'
@@ -23,7 +24,7 @@ export function useDerivedMintInfo(
 ): {
   dependentField: Field
   currencies: { [field in Field]?: Currency }
-  pair?: Pair | null
+  pair?: MockMooniSwapPair | null
   pairState: PairState
   currencyBalances: { [field in Field]?: CurrencyAmount }
   parsedAmounts: { [field in Field]?: CurrencyAmount }
@@ -31,7 +32,7 @@ export function useDerivedMintInfo(
   noLiquidity?: boolean
   liquidityMinted?: TokenAmount
   poolTokenPercentage?: Percent
-  error?: string
+  error?: string,
 } {
   const { account, chainId } = useActiveWeb3React()
 
@@ -49,7 +50,8 @@ export function useDerivedMintInfo(
   )
 
   // pair
-  const [pairState, pair] = usePair(currencies[Field.CURRENCY_A], currencies[Field.CURRENCY_B])
+  const [pairState, pair] = useMooniSwapPair(wrappedUniswapZeroCurrency(currencies[Field.CURRENCY_A], chainId), wrappedUniswapZeroCurrency(currencies[Field.CURRENCY_B], chainId))
+
   const totalSupply = useTotalSupply(pair?.liquidityToken)
 
   const noLiquidity: boolean =
@@ -75,8 +77,8 @@ export function useDerivedMintInfo(
       return undefined
     } else if (independentAmount) {
       // we wrap the currencies just to get the price in terms of the other token
-      const wrappedIndependentAmount = wrappedCurrencyAmount(independentAmount, chainId)
-      const [tokenA, tokenB] = [wrappedCurrency(currencyA, chainId), wrappedCurrency(currencyB, chainId)]
+      const wrappedIndependentAmount = wrappedMooniswapCurrencyAmount(independentAmount, chainId)
+      const [tokenA, tokenB] = [wrappedUniswapZeroCurrency (currencyA, chainId), wrappedUniswapZeroCurrency (currencyB, chainId)]
       if (tokenA && tokenB && wrappedIndependentAmount && pair) {
         const dependentCurrency = dependentField === Field.CURRENCY_B ? currencyB : currencyA
         const dependentTokenAmount =
@@ -103,7 +105,7 @@ export function useDerivedMintInfo(
       }
       return undefined
     } else {
-      const wrappedCurrencyA = wrappedCurrency(currencyA, chainId)
+      const wrappedCurrencyA = wrappedUniswapZeroCurrency(currencyA, chainId)
       return pair && wrappedCurrencyA ? pair.priceOf(wrappedCurrencyA) : undefined
     }
   }, [chainId, currencyA, noLiquidity, pair, parsedAmounts])
@@ -112,8 +114,8 @@ export function useDerivedMintInfo(
   const liquidityMinted = useMemo(() => {
     const { [Field.CURRENCY_A]: currencyAAmount, [Field.CURRENCY_B]: currencyBAmount } = parsedAmounts
     const [tokenAmountA, tokenAmountB] = [
-      wrappedCurrencyAmount(currencyAAmount, chainId),
-      wrappedCurrencyAmount(currencyBAmount, chainId)
+      wrappedMooniswapCurrencyAmount(currencyAAmount, chainId),
+      wrappedMooniswapCurrencyAmount(currencyBAmount, chainId)
     ]
     if (pair && totalSupply && tokenAmountA && tokenAmountB) {
       return pair.getLiquidityMinted(totalSupply, tokenAmountA, tokenAmountB)
@@ -164,7 +166,7 @@ export function useDerivedMintInfo(
     noLiquidity,
     liquidityMinted,
     poolTokenPercentage,
-    error
+    error,
   }
 }
 

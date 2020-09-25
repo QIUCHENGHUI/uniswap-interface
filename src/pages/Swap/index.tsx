@@ -26,7 +26,8 @@ import { useActiveWeb3React } from '../../hooks'
 import { useCurrency } from '../../hooks/Tokens'
 import { ApprovalState, useApproveCallbackFromTrade } from '../../hooks/useApproveCallback'
 import useENSAddress from '../../hooks/useENSAddress'
-import { useSwapCallback } from '../../hooks/useSwapCallback'
+import { useMooniSwap } from '../../hooks/useSwapCallback'
+// useSwapCallback
 import useToggledVersion, { Version } from '../../hooks/useToggledVersion'
 import useWrapCallback, { WrapType } from '../../hooks/useWrapCallback'
 import { useToggleSettingsMenu, useWalletModalToggle } from '../../state/application/hooks'
@@ -44,6 +45,7 @@ import { computeTradePriceBreakdown, warningSeverity } from '../../utils/prices'
 import AppBody from '../AppBody'
 import { ClickableText } from '../Pool/styleds'
 import Loader from '../../components/Loader'
+import { wrappedMooniswapCurrencyAmount } from '../../utils/wrappedCurrency'
 
 export default function Swap() {
   const loadedUrlParams = useDefaultsFromURLSearch()
@@ -62,7 +64,7 @@ export default function Swap() {
     setDismissTokenWarning(true)
   }, [])
 
-  const { account } = useActiveWeb3React()
+  const { account, chainId } = useActiveWeb3React()
   const theme = useContext(ThemeContext)
 
   // toggle wallet when disconnected
@@ -74,6 +76,7 @@ export default function Swap() {
 
   // get custom setting values for user
   const [deadline] = useUserDeadline()
+  console.log(deadline, 'deadline')
   const [allowedSlippage] = useUserSlippageTolerance()
 
   // swap state
@@ -84,8 +87,10 @@ export default function Swap() {
     currencyBalances,
     parsedAmount,
     currencies,
-    inputError: swapInputError
+    inputError: swapInputError,
+    mooniswapTrade
   } = useDerivedSwapInfo()
+  const distribution = mooniswapTrade?.[1]
   const { wrapType, execute: onWrap, inputError: wrapInputError } = useWrapCallback(
     currencies[Field.INPUT],
     currencies[Field.OUTPUT],
@@ -98,7 +103,8 @@ export default function Swap() {
     ? undefined
     : {
         [Version.v1]: v1Trade,
-        [Version.v2]: v2Trade
+        [Version.v2]: v2Trade,
+        [Version.v3]: mooniswapTrade?.[0]
       }[toggledVersion]
 
   const betterTradeLinkVersion: Version | undefined =
@@ -164,7 +170,11 @@ export default function Swap() {
   const noRoute = !route
 
   // check whether the user has approved the router on the input token
-  const [approval, approveCallback] = useApproveCallbackFromTrade(trade, allowedSlippage)
+  // const [approval, approveCallback] = useApproveCallbackFromTrade(trade, allowedSlippage)
+
+  //mooniswap
+  const [approval, approveCallback] = useApproveCallbackFromTrade(trade, distribution, allowedSlippage)
+
 
   // check if user has gone through approval process, used to show two step buttons, reset on token change
   const [approvalSubmitted, setApprovalSubmitted] = useState<boolean>(false)
@@ -179,13 +189,18 @@ export default function Swap() {
   const maxAmountInput: CurrencyAmount | undefined = maxAmountSpend(currencyBalances[Field.INPUT])
   const atMaxAmountInput = Boolean(maxAmountInput && parsedAmounts[Field.INPUT]?.equalTo(maxAmountInput))
 
+  // console.log(trade, 'tradetradetrade')
   // the callback to execute the swap
-  const { callback: swapCallback, error: swapCallbackError } = useSwapCallback(
-    trade,
-    allowedSlippage,
-    deadline,
-    recipient
-  )
+  // const { callback: swapCallback, error: swapCallbackError } = useSwapCallback(
+  //   trade,
+  //   allowedSlippage,
+  //   deadline,
+  //   recipient
+  // )
+
+  const mooniSwapParsedAmount = wrappedMooniswapCurrencyAmount(parsedAmount, chainId)
+  const [isChiApplied, swapCallback, estimate] = useMooniSwap(chainId, mooniSwapParsedAmount, trade, distribution, allowedSlippage)
+  console.log(isChiApplied, estimate, 'isChiApplied, estimate')
 
   const { priceImpactWithoutFee } = computeTradePriceBreakdown(trade)
 
@@ -270,6 +285,8 @@ export default function Swap() {
     onCurrencySelection
   ])
 
+  const notEnoughBalance = maxAmountInput && parsedAmount && JSBI.lessThan(maxAmountInput.raw, parsedAmount.raw)
+
   return (
     <>
       <TokenWarningModal
@@ -288,7 +305,8 @@ export default function Swap() {
             attemptingTxn={attemptingTxn}
             txHash={txHash}
             recipient={recipient}
-            allowedSlippage={allowedSlippage}
+            allowedSlippage={allowedSlippage} 
+            formattedAmounts={formattedAmounts}
             onConfirm={handleSwap}
             swapErrorMessage={swapErrorMessage}
             onDismiss={handleConfirmDismiss}
@@ -359,10 +377,12 @@ export default function Swap() {
                         Price
                       </Text>
                       <TradePrice
-                        price={trade?.executionPrice}
-                        showInverted={showInverted}
-                        setShowInverted={setShowInverted}
-                      />
+                      inputCurrency={currencies[Field.INPUT]}
+                      outputCurrency={currencies[Field.OUTPUT]}
+                      price={trade?.executionPrice}
+                      showInverted={showInverted}
+                      setShowInverted={setShowInverted}
+                    />
                     </RowBetween>
                   )}
                   {allowedSlippage !== INITIAL_ALLOWED_SLIPPAGE && (
@@ -426,9 +446,11 @@ export default function Swap() {
                   }}
                   width="48%"
                   id="swap-button"
-                  disabled={
-                    !isValid || approval !== ApprovalState.APPROVED || (priceImpactSeverity > 3 && !isExpertMode)
-                  }
+                  // disabled={
+                  //   !isValid || approval !== ApprovalState.APPROVED || (priceImpactSeverity > 3 && !isExpertMode)
+                  // }
+                  // error={isValid && priceImpactSeverity > 2}
+                  disabled={!isValid || approval !== ApprovalState.APPROVED || (priceImpactSeverity > 3 && !isExpertMode) || notEnoughBalance}
                   error={isValid && priceImpactSeverity > 2}
                 >
                   <Text fontSize={16} fontWeight={500}>
@@ -454,8 +476,10 @@ export default function Swap() {
                   }
                 }}
                 id="swap-button"
-                disabled={!isValid || (priceImpactSeverity > 3 && !isExpertMode) || !!swapCallbackError}
-                error={isValid && priceImpactSeverity > 2 && !swapCallbackError}
+                // disabled={!isValid || (priceImpactSeverity > 3 && !isExpertMode) || !!swapCallbackError}
+                // error={isValid && priceImpactSeverity > 2 && !swapCallbackError}
+                disabled={!isValid || (priceImpactSeverity > 3 && !isExpertMode) || notEnoughBalance}
+                error={isValid && priceImpactSeverity > 2}
               >
                 <Text fontSize={20} fontWeight={500}>
                   {swapInputError

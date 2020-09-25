@@ -1,24 +1,28 @@
-import { Currency, CurrencyAmount, currencyEquals, ETHER, Token } from '@uniswap/sdk'
+import { Currency, CurrencyAmount, currencyEquals, Token } from '@uniswap/sdk'
 import React, { CSSProperties, MutableRefObject, useCallback, useMemo } from 'react'
 import { FixedSizeList } from 'react-window'
 import { Text } from 'rebass'
 import styled from 'styled-components'
 import { useActiveWeb3React } from '../../hooks'
-import { useSelectedTokenList, WrappedTokenInfo } from '../../state/lists/hooks'
+import { useDefaultTokenList, WrappedTokenInfo } from '../../state/lists/hooks'
+// useSelectedTokenList
 import { useAddUserToken, useRemoveUserAddedToken } from '../../state/user/hooks'
 import { useCurrencyBalance } from '../../state/wallet/hooks'
 import { LinkStyledButton, TYPE } from '../../theme'
-import { useIsUserAddedToken } from '../../hooks/Tokens'
+import { useAllTokens } from '../../hooks/Tokens'
+// useIsUserAddedToken
 import Column from '../Column'
 import { RowFixed } from '../Row'
 import CurrencyLogo from '../CurrencyLogo'
 import { MouseoverTooltip } from '../Tooltip'
 import { FadedSpan, MenuItem } from './styleds'
 import Loader from '../Loader'
-import { isTokenOnList } from '../../utils'
+import { isDefaultToken } from '../../utils'
+// isTokenOnList
+import { UniswapZeroETHER, wrappedUniswapZeroCurrency } from '../../utils/wrappedCurrency'
 
 function currencyKey(currency: Currency): string {
-  return currency instanceof Token ? currency.address : currency === ETHER ? 'ETHER' : ''
+  return currency instanceof Token ? currency.address : currency === UniswapZeroETHER ? 'ETHER' : ''
 }
 
 const StyledBalanceText = styled(Text)`
@@ -95,9 +99,14 @@ function CurrencyRow({
 }) {
   const { account, chainId } = useActiveWeb3React()
   const key = currencyKey(currency)
-  const selectedTokenList = useSelectedTokenList()
-  const isOnSelectedList = isTokenOnList(selectedTokenList, currency)
-  const customAdded = useIsUserAddedToken(currency)
+  // const selectedTokenList = useSelectedTokenList()
+  const allTokens = useAllTokens()
+  // const isOnSelectedList = isTokenOnList(selectedTokenList, currency)
+  const defaultTokens = useDefaultTokenList()
+  const isDefault = isDefaultToken(defaultTokens, wrappedUniswapZeroCurrency(currency, chainId))
+  const customAdded = Boolean(!isDefault && currency instanceof Token && allTokens[currency.address])
+
+  // const customAdded = useIsUserAddedToken(currency)
   const balance = useCurrencyBalance(account ?? undefined, currency)
 
   const removeToken = useRemoveUserAddedToken()
@@ -118,7 +127,7 @@ function CurrencyRow({
           {currency.symbol}
         </Text>
         <FadedSpan>
-          {!isOnSelectedList && customAdded ? (
+          {customAdded ? (
             <TYPE.main fontWeight={500}>
               Added by user
               <LinkStyledButton
@@ -131,7 +140,7 @@ function CurrencyRow({
               </LinkStyledButton>
             </TYPE.main>
           ) : null}
-          {!isOnSelectedList && !customAdded ? (
+          {!isDefault && !customAdded ? (
             <TYPE.main fontWeight={500}>
               Found by address
               <LinkStyledButton
